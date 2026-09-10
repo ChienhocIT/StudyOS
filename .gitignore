@@ -1,0 +1,33 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Dependencies, builds, and local tooling
+node_modules/
+.next/
+dist/
+build/
+target/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+coverage/
+htmlcov/
+.coverage
+*.egg-info/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+.tmp/
+data/
+playwright-report/
+test-results/

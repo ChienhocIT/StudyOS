@@ -1,0 +1,2263 @@
+[
+  {
+    "id": "E0",
+    "title": "Engineering Foundation",
+    "goal": "Create a reproducible repo, local runtime, CI and architecture guardrails before feature work.",
+    "priority": "P0",
+    "phase": "Sprint 0",
+    "stories": [
+      {
+        "id": "US-0001",
+        "title": "Bootstrap monorepo",
+        "persona": "Developer",
+        "value": "all apps build from one documented repository",
+        "priority": "P0",
+        "points": 3,
+        "depends": [],
+        "acceptanceCriteria": [
+          "Repo contains web, core-api, ai-service, worker, infrastructure, docs and tests roots.",
+          "Local README documents supported toolchain and startup commands."
+        ],
+        "tasks": [
+          {
+            "id": "US-0001-T01",
+            "title": "Create monorepo directories and root conventions",
+            "component": "Platform",
+            "estimate": 1
+          },
+          {
+            "id": "US-0001-T02",
+            "title": "Create Spring Boot Core skeleton",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0001-T03",
+            "title": "Create FastAPI service skeleton",
+            "component": "AI",
+            "estimate": 1
+          },
+          {
+            "id": "US-0001-T04",
+            "title": "Create worker skeleton",
+            "component": "Worker",
+            "estimate": 1
+          },
+          {
+            "id": "US-0001-T05",
+            "title": "Create Next.js web skeleton",
+            "component": "Web",
+            "estimate": 1
+          },
+          {
+            "id": "US-0001-T06",
+            "title": "Add editorconfig, formatters and lint configs",
+            "component": "Platform",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0002",
+        "title": "Local infrastructure with Docker Compose",
+        "persona": "Developer",
+        "value": "run all required local dependencies predictably",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0001"
+        ],
+        "acceptanceCriteria": [
+          "Docker Compose starts PostgreSQL/pgvector, Redis, RabbitMQ and MinIO.",
+          "Health checks make dependency readiness observable.",
+          "Local secrets are example-only and not production credentials."
+        ],
+        "tasks": [
+          {
+            "id": "US-0002-T01",
+            "title": "Add PostgreSQL pgvector container and init scripts",
+            "component": "Platform",
+            "estimate": 1
+          },
+          {
+            "id": "US-0002-T02",
+            "title": "Add Redis, RabbitMQ and MinIO services",
+            "component": "Platform",
+            "estimate": 1
+          },
+          {
+            "id": "US-0002-T03",
+            "title": "Add health checks and named volumes",
+            "component": "Platform",
+            "estimate": 1
+          },
+          {
+            "id": "US-0002-T04",
+            "title": "Create .env.example and configuration docs",
+            "component": "Platform",
+            "estimate": 1
+          },
+          {
+            "id": "US-0002-T05",
+            "title": "Add one-command local startup smoke script",
+            "component": "Platform",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0003",
+        "title": "CI quality gate",
+        "persona": "Developer",
+        "value": "catch formatting, test and contract failures before merge",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0001"
+        ],
+        "acceptanceCriteria": [
+          "Pull requests run format/lint, unit tests and YAML/JSON contract parsing.",
+          "Build fails on architecture rule violations once Core modules exist."
+        ],
+        "tasks": [
+          {
+            "id": "US-0003-T01",
+            "title": "Create GitHub Actions workflow for Java",
+            "component": "DevOps",
+            "estimate": 1
+          },
+          {
+            "id": "US-0003-T02",
+            "title": "Create Python lint/test workflow",
+            "component": "DevOps",
+            "estimate": 1
+          },
+          {
+            "id": "US-0003-T03",
+            "title": "Create TypeScript lint/test workflow",
+            "component": "DevOps",
+            "estimate": 1
+          },
+          {
+            "id": "US-0003-T04",
+            "title": "Add OpenAPI/AsyncAPI/JSON schema parsing checks",
+            "component": "DevOps",
+            "estimate": 1
+          },
+          {
+            "id": "US-0003-T05",
+            "title": "Cache build dependencies safely",
+            "component": "DevOps",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0004",
+        "title": "Database migration baseline",
+        "persona": "Developer",
+        "value": "have one controlled owner for schema evolution",
+        "priority": "P0",
+        "points": 3,
+        "depends": [
+          "US-0002"
+        ],
+        "acceptanceCriteria": [
+          "Initial migration creates required extensions/tables/indexes.",
+          "Migration can run from empty DB repeatedly in CI."
+        ],
+        "tasks": [
+          {
+            "id": "US-0004-T01",
+            "title": "Choose Flyway or Liquibase and configure Core",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0004-T02",
+            "title": "Translate Phase 0 schema.sql into V1 migration",
+            "component": "Database",
+            "estimate": 2
+          },
+          {
+            "id": "US-0004-T03",
+            "title": "Add migration integration test on clean PostgreSQL",
+            "component": "Test",
+            "estimate": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E1",
+    "title": "Identity & Tenant Isolation",
+    "goal": "Authenticate users and enforce workspace-scoped authorization as a platform invariant.",
+    "priority": "P0",
+    "phase": "Sprint 1",
+    "stories": [
+      {
+        "id": "US-0101",
+        "title": "Register and login",
+        "persona": "Learner",
+        "value": "create an account and obtain a secure session",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0004"
+        ],
+        "acceptanceCriteria": [
+          "Valid registration creates active user and tokens.",
+          "Passwords are hashed; duplicate email is rejected.",
+          "Invalid credentials return stable error without leaking which field was wrong."
+        ],
+        "tasks": [
+          {
+            "id": "US-0101-T01",
+            "title": "Implement User aggregate/repository",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0101-T02",
+            "title": "Implement password hashing policy",
+            "component": "Security",
+            "estimate": 1
+          },
+          {
+            "id": "US-0101-T03",
+            "title": "Implement register/login commands and controller",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0101-T04",
+            "title": "Implement JWT access token service",
+            "component": "Security",
+            "estimate": 2
+          },
+          {
+            "id": "US-0101-T05",
+            "title": "Add auth integration/negative tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0102",
+        "title": "Refresh token rotation and logout",
+        "persona": "Learner",
+        "value": "remain signed in safely and revoke sessions",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0101"
+        ],
+        "acceptanceCriteria": [
+          "Refresh token is stored hashed and rotated on use.",
+          "Reusing a revoked token is rejected.",
+          "Logout revokes the target refresh session."
+        ],
+        "tasks": [
+          {
+            "id": "US-0102-T01",
+            "title": "Implement RefreshSession domain model",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0102-T02",
+            "title": "Implement hashed refresh token persistence",
+            "component": "Security",
+            "estimate": 1
+          },
+          {
+            "id": "US-0102-T03",
+            "title": "Implement rotate/revoke flow",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0102-T04",
+            "title": "Add token expiry/rotation tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0103",
+        "title": "Workspace membership and RBAC",
+        "persona": "Learner",
+        "value": "access only workspaces where I am a member",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0101"
+        ],
+        "acceptanceCriteria": [
+          "Workspace creator is OWNER.",
+          "Non-member cannot read or mutate workspace resources.",
+          "Role checks are reusable across modules."
+        ],
+        "tasks": [
+          {
+            "id": "US-0103-T01",
+            "title": "Implement Workspace and WorkspaceMember aggregates",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0103-T02",
+            "title": "Implement WorkspaceAuthorization application interface",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0103-T03",
+            "title": "Implement workspace endpoints",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0103-T04",
+            "title": "Add authorization matrix tests",
+            "component": "Security",
+            "estimate": 3
+          },
+          {
+            "id": "US-0103-T05",
+            "title": "Add audit event for membership changes",
+            "component": "Observability",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0104",
+        "title": "Google OAuth sign-in",
+        "persona": "Learner",
+        "value": "sign in using an external identity without weakening StudyOS authorization",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-0101"
+        ],
+        "acceptanceCriteria": [
+          "External subject maps to one internal user identity.",
+          "OAuth provider claims never directly grant workspace access."
+        ],
+        "tasks": [
+          {
+            "id": "US-0104-T01",
+            "title": "Add OAuth provider adapter",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0104-T02",
+            "title": "Implement identity linking rules",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0104-T03",
+            "title": "Add callback/error handling",
+            "component": "Web",
+            "estimate": 1
+          },
+          {
+            "id": "US-0104-T04",
+            "title": "Test account/link collision cases",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E2",
+    "title": "Workspace & Notebook",
+    "goal": "Give learners a durable tenant-scoped place to organize goals and sources.",
+    "priority": "P0",
+    "phase": "Sprint 1-2",
+    "stories": [
+      {
+        "id": "US-0201",
+        "title": "Create and manage notebooks",
+        "persona": "Learner",
+        "value": "organize one learning topic and goal",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0103"
+        ],
+        "acceptanceCriteria": [
+          "Member can create/list/read/update/archive notebooks in workspace.",
+          "Cross-workspace notebook IDs are forbidden/not found safely."
+        ],
+        "tasks": [
+          {
+            "id": "US-0201-T01",
+            "title": "Implement Notebook aggregate and repository",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0201-T02",
+            "title": "Implement notebook application service",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0201-T03",
+            "title": "Implement REST endpoints from OpenAPI",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0201-T04",
+            "title": "Add indexes/query tests",
+            "component": "Database",
+            "estimate": 1
+          },
+          {
+            "id": "US-0201-T05",
+            "title": "Build notebook list/create UI",
+            "component": "Web",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0202",
+        "title": "Notebook goal metadata",
+        "persona": "Learner",
+        "value": "state what I am trying to learn so later recommendations have context",
+        "priority": "P1",
+        "points": 3,
+        "depends": [
+          "US-0201"
+        ],
+        "acceptanceCriteria": [
+          "Notebook can store goal text separately from title/description.",
+          "Goal metadata is returned to AI only through server-created context."
+        ],
+        "tasks": [
+          {
+            "id": "US-0202-T01",
+            "title": "Add goalText validation and persistence",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0202-T02",
+            "title": "Add notebook settings UI",
+            "component": "Web",
+            "estimate": 1
+          },
+          {
+            "id": "US-0202-T03",
+            "title": "Add contract/integration tests",
+            "component": "Test",
+            "estimate": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E3",
+    "title": "Source Ingestion Platform",
+    "goal": "Turn heterogeneous learning sources into durable normalized, searchable data with visible processing state.",
+    "priority": "P0",
+    "phase": "Sprint 2-4",
+    "stories": [
+      {
+        "id": "US-0301",
+        "title": "Presigned PDF upload",
+        "persona": "Learner",
+        "value": "upload a document without tying up the Core API process",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0201"
+        ],
+        "acceptanceCriteria": [
+          "Upload-init validates membership, MIME, size and quota.",
+          "Browser uploads using short-lived signed URL.",
+          "Upload-complete queues processing only after source/object checks."
+        ],
+        "tasks": [
+          {
+            "id": "US-0301-T01",
+            "title": "Implement Source/SourceVersion aggregates and state machine",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0301-T02",
+            "title": "Implement ObjectStoragePort and MinIO/S3 adapter",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0301-T03",
+            "title": "Implement upload-init endpoint",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0301-T04",
+            "title": "Implement upload-complete endpoint and checksum checks",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0301-T05",
+            "title": "Build upload UI with status polling",
+            "component": "Web",
+            "estimate": 2
+          },
+          {
+            "id": "US-0301-T06",
+            "title": "Add file size/MIME/security tests",
+            "component": "Security",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0302",
+        "title": "Transactional outbox publisher",
+        "persona": "Platform",
+        "value": "never lose a source-processing request after database commit",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0301"
+        ],
+        "acceptanceCriteria": [
+          "Source queue transition and outbox insert commit atomically.",
+          "Publisher marks event published only after broker confirm.",
+          "Restarting publisher does not lose unpublished rows."
+        ],
+        "tasks": [
+          {
+            "id": "US-0302-T01",
+            "title": "Implement outbox entity/repository",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0302-T02",
+            "title": "Implement outbox insertion in source transaction",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0302-T03",
+            "title": "Implement publisher batching with SKIP LOCKED",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0302-T04",
+            "title": "Enable RabbitMQ publisher confirms",
+            "component": "Messaging",
+            "estimate": 1
+          },
+          {
+            "id": "US-0302-T05",
+            "title": "Add crash/retry integration tests",
+            "component": "Test",
+            "estimate": 3
+          }
+        ]
+      },
+      {
+        "id": "US-0303",
+        "title": "PDF parse and normalize worker",
+        "persona": "Learner",
+        "value": "convert uploaded PDF into structured text while preserving provenance",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0302"
+        ],
+        "acceptanceCriteria": [
+          "Worker consumes parse request idempotently.",
+          "Normalized output preserves section/page information where parser provides it.",
+          "Corrupt/unsupported documents become explicit FAILED state."
+        ],
+        "tasks": [
+          {
+            "id": "US-0303-T01",
+            "title": "Implement RabbitMQ consumer foundation",
+            "component": "Worker",
+            "estimate": 2
+          },
+          {
+            "id": "US-0303-T02",
+            "title": "Implement processed_events idempotency helper",
+            "component": "Worker",
+            "estimate": 2
+          },
+          {
+            "id": "US-0303-T03",
+            "title": "Implement PDF parser adapter",
+            "component": "Worker",
+            "estimate": 3
+          },
+          {
+            "id": "US-0303-T04",
+            "title": "Define normalized document schema",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0303-T05",
+            "title": "Write normalized artifact to object storage",
+            "component": "Worker",
+            "estimate": 1
+          },
+          {
+            "id": "US-0303-T06",
+            "title": "Publish source.parsed/source.failed events",
+            "component": "Worker",
+            "estimate": 1
+          },
+          {
+            "id": "US-0303-T07",
+            "title": "Add parser fixture tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0304",
+        "title": "Chunk and embedding index",
+        "persona": "Learner",
+        "value": "make normalized source retrievable by semantic and lexical search",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0303"
+        ],
+        "acceptanceCriteria": [
+          "Chunks are deterministic and linked to page/section/time metadata.",
+          "Duplicate event does not create duplicate chunks.",
+          "Each chunk has embedding/config version and FTS representation."
+        ],
+        "tasks": [
+          {
+            "id": "US-0304-T01",
+            "title": "Implement section-aware chunker",
+            "component": "AI",
+            "estimate": 3
+          },
+          {
+            "id": "US-0304-T02",
+            "title": "Implement embedding provider interface",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0304-T03",
+            "title": "Implement index worker and batch embeddings",
+            "component": "Worker",
+            "estimate": 3
+          },
+          {
+            "id": "US-0304-T04",
+            "title": "Persist chunks/pgvector records idempotently",
+            "component": "Database",
+            "estimate": 2
+          },
+          {
+            "id": "US-0304-T05",
+            "title": "Create FTS/vector indexes and explain plans",
+            "component": "Database",
+            "estimate": 2
+          },
+          {
+            "id": "US-0304-T06",
+            "title": "Publish source.indexed event",
+            "component": "Worker",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0305",
+        "title": "Concept enrichment and READY transition",
+        "persona": "Learner",
+        "value": "have source concepts available for later learning features",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0304"
+        ],
+        "acceptanceCriteria": [
+          "Concept candidates retain supporting chunk IDs and confidence.",
+          "Duplicate normalized concepts merge deterministically within notebook.",
+          "Core marks source READY only on valid completion event."
+        ],
+        "tasks": [
+          {
+            "id": "US-0305-T01",
+            "title": "Implement concept extraction schema/prompt",
+            "component": "AI",
+            "estimate": 3
+          },
+          {
+            "id": "US-0305-T02",
+            "title": "Implement concept normalization/merge",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0305-T03",
+            "title": "Persist concepts/chunk_concepts safely",
+            "component": "Database",
+            "estimate": 2
+          },
+          {
+            "id": "US-0305-T04",
+            "title": "Publish source.ready.v1",
+            "component": "Worker",
+            "estimate": 1
+          },
+          {
+            "id": "US-0305-T05",
+            "title": "Implement Core source event consumer/state validation",
+            "component": "Core",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0306",
+        "title": "URL and raw text sources",
+        "persona": "Learner",
+        "value": "add useful material without file upload",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-0302"
+        ],
+        "acceptanceCriteria": [
+          "WEB/RAW source respects same notebook scope and state model.",
+          "HTML is sanitized/normalized as untrusted content."
+        ],
+        "tasks": [
+          {
+            "id": "US-0306-T01",
+            "title": "Implement raw text source endpoint",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0306-T02",
+            "title": "Implement safe URL fetch policy/SSRF controls",
+            "component": "Security",
+            "estimate": 3
+          },
+          {
+            "id": "US-0306-T03",
+            "title": "Implement HTML extraction/sanitization worker",
+            "component": "Worker",
+            "estimate": 2
+          },
+          {
+            "id": "US-0306-T04",
+            "title": "Add URL content tests and block private-network targets",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E4",
+    "title": "Retrieval & Grounded Chat",
+    "goal": "Answer questions from user sources with validated citations and resilient real-time streaming.",
+    "priority": "P0",
+    "phase": "Sprint 5-7",
+    "stories": [
+      {
+        "id": "US-0401",
+        "title": "Hybrid retrieval baseline",
+        "persona": "Learner",
+        "value": "retrieve the most relevant source evidence for a question",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0304"
+        ],
+        "acceptanceCriteria": [
+          "Retrieval always applies workspace/notebook filters.",
+          "Vector and lexical results are fused into one ranked candidate list.",
+          "Debug mode exposes scores/config version to trusted users/tests."
+        ],
+        "tasks": [
+          {
+            "id": "US-0401-T01",
+            "title": "Implement tenant-scoped chunk repository",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0401-T02",
+            "title": "Implement query embedding",
+            "component": "AI",
+            "estimate": 1
+          },
+          {
+            "id": "US-0401-T03",
+            "title": "Implement vector search",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0401-T04",
+            "title": "Implement PostgreSQL FTS search",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0401-T05",
+            "title": "Implement reciprocal-rank fusion",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0401-T06",
+            "title": "Add retrieval unit/integration dataset tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0402",
+        "title": "Grounded answer and citation validation",
+        "persona": "Learner",
+        "value": "verify where AI claims come from",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0401"
+        ],
+        "acceptanceCriteria": [
+          "Model receives only citation keys assigned by server.",
+          "Every returned citation key maps to a retrieved chunk.",
+          "Insufficient evidence produces explicit fallback, not invented citations."
+        ],
+        "tasks": [
+          {
+            "id": "US-0402-T01",
+            "title": "Implement context budgeter/citation-key assignment",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0402-T02",
+            "title": "Implement grounded answer structured schema",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0402-T03",
+            "title": "Implement citation validator",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0402-T04",
+            "title": "Implement source metadata materialization in Core",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0402-T05",
+            "title": "Add hallucinated-citation adversarial tests",
+            "component": "Security",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0403",
+        "title": "Conversation persistence",
+        "persona": "Learner",
+        "value": "keep durable chat history per notebook",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0201"
+        ],
+        "acceptanceCriteria": [
+          "Conversation/message order is deterministic.",
+          "User can only open conversations in permitted notebook.",
+          "Feedback can be recorded per assistant message."
+        ],
+        "tasks": [
+          {
+            "id": "US-0403-T01",
+            "title": "Implement Conversation/Message/Citation entities",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0403-T02",
+            "title": "Implement conversation REST endpoints",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0403-T03",
+            "title": "Implement message feedback endpoint",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0403-T04",
+            "title": "Add pagination/order tests",
+            "component": "Test",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0404",
+        "title": "Production WebSocket chat",
+        "persona": "Learner",
+        "value": "receive streamed AI answers and recover from transient connection loss",
+        "priority": "P0",
+        "points": 13,
+        "depends": [
+          "US-0402",
+          "US-0403"
+        ],
+        "acceptanceCriteria": [
+          "Short-lived token authorizes exactly one permitted conversation.",
+          "Duplicate requestId does not create a second message.",
+          "Client can cancel and resume from buffered sequence.",
+          "Final message/citations remain durable after stream completion."
+        ],
+        "tasks": [
+          {
+            "id": "US-0404-T01",
+            "title": "Implement WS token issuance",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0404-T02",
+            "title": "Implement WebSocket handshake/auth/origin validation",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0404-T03",
+            "title": "Implement client command parser and protocol envelope",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0404-T04",
+            "title": "Implement Core -> FastAPI internal streaming client",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0404-T05",
+            "title": "Implement FastAPI chat stream endpoint",
+            "component": "AI",
+            "estimate": 3
+          },
+          {
+            "id": "US-0404-T06",
+            "title": "Implement sequence allocation + Redis replay buffer",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0404-T07",
+            "title": "Implement cancel/reconnect/resume behavior",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0404-T08",
+            "title": "Build typed WebSocket client and chat UI",
+            "component": "Web",
+            "estimate": 4
+          },
+          {
+            "id": "US-0404-T09",
+            "title": "Add WS integration/concurrency tests",
+            "component": "Test",
+            "estimate": 4
+          }
+        ]
+      },
+      {
+        "id": "US-0405",
+        "title": "Reranking and RAG evaluation gate",
+        "persona": "Platform",
+        "value": "improve retrieval only when evaluation demonstrates value",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0401"
+        ],
+        "acceptanceCriteria": [
+          "Versioned eval dataset can compare baseline and candidate retrieval configs.",
+          "Release report includes retrieval and citation metrics plus latency/cost."
+        ],
+        "tasks": [
+          {
+            "id": "US-0405-T01",
+            "title": "Create representative eval dataset format",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0405-T02",
+            "title": "Implement Recall@K/MRR/NDCG/context precision scripts",
+            "component": "AI",
+            "estimate": 3
+          },
+          {
+            "id": "US-0405-T03",
+            "title": "Add optional reranker adapter",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0405-T04",
+            "title": "Version retrieval configuration",
+            "component": "AI",
+            "estimate": 1
+          },
+          {
+            "id": "US-0405-T05",
+            "title": "Add CI/offline eval command and report artifact",
+            "component": "DevOps",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E5",
+    "title": "Notes & Studio",
+    "goal": "Turn evidence into reusable notes and generated learning artifacts.",
+    "priority": "P1",
+    "phase": "Sprint 8-9",
+    "stories": [
+      {
+        "id": "US-0501",
+        "title": "Source-linked notes",
+        "persona": "Learner",
+        "value": "save knowledge with provenance instead of losing it in chat history",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-0403"
+        ],
+        "acceptanceCriteria": [
+          "Note belongs to notebook/user and may reference valid citations.",
+          "Cross-notebook citation attachment is rejected."
+        ],
+        "tasks": [
+          {
+            "id": "US-0501-T01",
+            "title": "Implement Note/NoteCitation entities",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0501-T02",
+            "title": "Implement notes CRUD and authorization",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0501-T03",
+            "title": "Build note editor with citation chips",
+            "component": "Web",
+            "estimate": 2
+          },
+          {
+            "id": "US-0501-T04",
+            "title": "Add ownership/provenance tests",
+            "component": "Test",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0502",
+        "title": "Artifact job framework",
+        "persona": "Learner",
+        "value": "request generated study artifacts without blocking HTTP",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0302",
+          "US-0402"
+        ],
+        "acceptanceCriteria": [
+          "Generation request returns 202/job state.",
+          "Duplicate idempotency key returns same logical job.",
+          "Failure and retry status is visible."
+        ],
+        "tasks": [
+          {
+            "id": "US-0502-T01",
+            "title": "Implement ArtifactJob aggregate",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0502-T02",
+            "title": "Implement artifact generation endpoints/outbox",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0502-T03",
+            "title": "Implement artifact worker dispatch",
+            "component": "Worker",
+            "estimate": 2
+          },
+          {
+            "id": "US-0502-T04",
+            "title": "Implement AI structured artifact contract",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0502-T05",
+            "title": "Implement job status endpoint/UI",
+            "component": "Web",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E6",
+    "title": "Quiz & Flashcard Active Learning",
+    "goal": "Convert passive source consumption into evidence-producing practice and spaced review.",
+    "priority": "P0",
+    "phase": "Sprint 9-11",
+    "stories": [
+      {
+        "id": "US-0601",
+        "title": "Grounded quiz generation",
+        "persona": "Learner",
+        "value": "practice exactly the concepts supported by my selected sources",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0502"
+        ],
+        "acceptanceCriteria": [
+          "Question includes concept/source provenance.",
+          "Server rejects malformed/unsupported generated question payload.",
+          "Answer key is not exposed before completion where inappropriate."
+        ],
+        "tasks": [
+          {
+            "id": "US-0601-T01",
+            "title": "Implement quiz generation prompt/schema",
+            "component": "AI",
+            "estimate": 3
+          },
+          {
+            "id": "US-0601-T02",
+            "title": "Implement quiz persistence mapper/validator",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0601-T03",
+            "title": "Implement question-concept/source linkage",
+            "component": "Database",
+            "estimate": 1
+          },
+          {
+            "id": "US-0601-T04",
+            "title": "Build quiz rendering UI",
+            "component": "Web",
+            "estimate": 3
+          },
+          {
+            "id": "US-0601-T05",
+            "title": "Add groundedness/schema tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0602",
+        "title": "Quiz attempt and scoring",
+        "persona": "Learner",
+        "value": "complete a quiz and receive consistent results",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0601"
+        ],
+        "acceptanceCriteria": [
+          "Attempt can save/replace answers until completion.",
+          "Complete is idempotent and locks final score.",
+          "Objective questions score deterministically."
+        ],
+        "tasks": [
+          {
+            "id": "US-0602-T01",
+            "title": "Implement QuizAttempt/QuizAnswer aggregates",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0602-T02",
+            "title": "Implement start/save/complete endpoints",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0602-T03",
+            "title": "Implement deterministic scoring strategies",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0602-T04",
+            "title": "Build attempt/result UI",
+            "component": "Web",
+            "estimate": 3
+          },
+          {
+            "id": "US-0602-T05",
+            "title": "Add duplicate-complete and authorization tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0603",
+        "title": "Flashcard generation",
+        "persona": "Learner",
+        "value": "turn source concepts into reviewable recall prompts",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0502"
+        ],
+        "acceptanceCriteria": [
+          "Generated cards preserve source/chunk/concept provenance where available.",
+          "Duplicate generation does not silently duplicate same job."
+        ],
+        "tasks": [
+          {
+            "id": "US-0603-T01",
+            "title": "Implement flashcard generation schema/prompt",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0603-T02",
+            "title": "Persist deck/cards and provenance",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0603-T03",
+            "title": "Build deck/card UI",
+            "component": "Web",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0604",
+        "title": "Spaced review scheduler",
+        "persona": "Learner",
+        "value": "review cards at deterministic due times based on my history",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0603"
+        ],
+        "acceptanceCriteria": [
+          "Queue returns only current user due cards.",
+          "Grade produces deterministic next state/date.",
+          "Concurrent duplicate review cannot be applied twice."
+        ],
+        "tasks": [
+          {
+            "id": "US-0604-T01",
+            "title": "Define ReviewScheduler interface/state model",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0604-T02",
+            "title": "Implement initial validated scheduling algorithm",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0604-T03",
+            "title": "Implement review queue query",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0604-T04",
+            "title": "Implement grade transaction/history",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0604-T05",
+            "title": "Build review UI",
+            "component": "Web",
+            "estimate": 3
+          },
+          {
+            "id": "US-0604-T06",
+            "title": "Add property/unit tests for scheduler",
+            "component": "Test",
+            "estimate": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E7",
+    "title": "Learning State & Adaptive Recommendations",
+    "goal": "Maintain explainable concept-level learner state and recommend the next high-value action.",
+    "priority": "P0",
+    "phase": "Sprint 10-12",
+    "stories": [
+      {
+        "id": "US-0701",
+        "title": "Mastery evidence from quiz",
+        "persona": "Learner",
+        "value": "have demonstrated quiz performance update my learning state",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0602",
+          "US-0305"
+        ],
+        "acceptanceCriteria": [
+          "Quiz completion creates evidence per covered concept.",
+          "Mastery and confidence update is explainable from stored evidence.",
+          "Repeating completion does not duplicate evidence."
+        ],
+        "tasks": [
+          {
+            "id": "US-0701-T01",
+            "title": "Define mastery update algorithm v0",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0701-T02",
+            "title": "Implement MasteryEvidence append model",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0701-T03",
+            "title": "Implement mastery projection update with concurrency control",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0701-T04",
+            "title": "Wire quiz completion to evidence",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0701-T05",
+            "title": "Add algorithm examples/golden tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0702",
+        "title": "Retention evidence from flashcard reviews",
+        "persona": "Learner",
+        "value": "have delayed recall affect mastery more than passive viewing",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0604",
+          "US-0701"
+        ],
+        "acceptanceCriteria": [
+          "Concept-linked review creates weighted evidence.",
+          "Immediate repeated reviews do not unrealistically inflate mastery."
+        ],
+        "tasks": [
+          {
+            "id": "US-0702-T01",
+            "title": "Define recall evidence weighting rule",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0702-T02",
+            "title": "Wire review transaction to mastery evidence",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0702-T03",
+            "title": "Add delayed/immediate review tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0703",
+        "title": "Mastery and concept APIs",
+        "persona": "Learner",
+        "value": "see what I know, what is uncertain and why",
+        "priority": "P0",
+        "points": 5,
+        "depends": [
+          "US-0701"
+        ],
+        "acceptanceCriteria": [
+          "Mastery API returns score, confidence, evidence count and last evidence time.",
+          "Concept API returns notebook-scoped concept relationships."
+        ],
+        "tasks": [
+          {
+            "id": "US-0703-T01",
+            "title": "Implement concept projection query",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0703-T02",
+            "title": "Implement mastery query endpoint",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0703-T03",
+            "title": "Build mastery/weak-concepts UI",
+            "component": "Web",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0704",
+        "title": "Explainable recommendation engine v0",
+        "persona": "Learner",
+        "value": "know the best next learning action based on goal, gaps and review urgency",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0702",
+          "US-0202"
+        ],
+        "acceptanceCriteria": [
+          "Recommendation priority uses transparent rules/weights.",
+          "Every recommendation includes reason factors.",
+          "Engine never recommends inaccessible notebook/source."
+        ],
+        "tasks": [
+          {
+            "id": "US-0704-T01",
+            "title": "Define candidate action model and score weights",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0704-T02",
+            "title": "Implement recommendation generation service",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-0704-T03",
+            "title": "Persist recommendation snapshot/reason JSON",
+            "component": "Database",
+            "estimate": 1
+          },
+          {
+            "id": "US-0704-T04",
+            "title": "Implement recommendations endpoint",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0704-T05",
+            "title": "Build Today/Next Action UI",
+            "component": "Web",
+            "estimate": 3
+          },
+          {
+            "id": "US-0704-T06",
+            "title": "Add explainability/authorization tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E8",
+    "title": "YouTube Language Lab",
+    "goal": "Turn authentic video transcripts into integrated translation, vocabulary and spaced review.",
+    "priority": "P1",
+    "phase": "Sprint 12-13",
+    "stories": [
+      {
+        "id": "US-0801",
+        "title": "YouTube source and transcript pipeline",
+        "persona": "Language learner",
+        "value": "import a video as a timestamped learning source when transcript access is available",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0302"
+        ],
+        "acceptanceCriteria": [
+          "URL is classified as YOUTUBE and remains tenant scoped.",
+          "Transcript provider abstraction returns timestamped segments or explicit unavailable state.",
+          "Provider failure does not fabricate transcript text."
+        ],
+        "tasks": [
+          {
+            "id": "US-0801-T01",
+            "title": "Implement YouTube URL classifier/metadata parser",
+            "component": "Worker",
+            "estimate": 2
+          },
+          {
+            "id": "US-0801-T02",
+            "title": "Define TranscriptProvider abstraction",
+            "component": "Worker",
+            "estimate": 2
+          },
+          {
+            "id": "US-0801-T03",
+            "title": "Implement first permitted/manual provider adapter",
+            "component": "Worker",
+            "estimate": 3
+          },
+          {
+            "id": "US-0801-T04",
+            "title": "Persist transcript segments",
+            "component": "Database",
+            "estimate": 2
+          },
+          {
+            "id": "US-0801-T05",
+            "title": "Publish transcript ready/failure events",
+            "component": "Worker",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-0802",
+        "title": "Transcript learning UI",
+        "persona": "Language learner",
+        "value": "navigate video and transcript together",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-0801"
+        ],
+        "acceptanceCriteria": [
+          "Transcript displays timestamped segments.",
+          "Selecting a segment can seek video and launch analysis."
+        ],
+        "tasks": [
+          {
+            "id": "US-0802-T01",
+            "title": "Implement transcript REST endpoint",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0802-T02",
+            "title": "Build synchronized video/transcript panel",
+            "component": "Web",
+            "estimate": 3
+          },
+          {
+            "id": "US-0802-T03",
+            "title": "Add segment selection/seek behavior",
+            "component": "Web",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0803",
+        "title": "Sentence translation/vocabulary/grammar analysis",
+        "persona": "Language learner",
+        "value": "understand a selected authentic sentence without switching tools",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0802",
+          "US-0402"
+        ],
+        "acceptanceCriteria": [
+          "Analysis returns structured translation, vocabulary and grammar fields.",
+          "AI receives learner level and source sentence as data, not authority.",
+          "Invalid model output is rejected/retried/fails safely."
+        ],
+        "tasks": [
+          {
+            "id": "US-0803-T01",
+            "title": "Implement language analysis Pydantic schemas",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0803-T02",
+            "title": "Implement language prompt/model route",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0803-T03",
+            "title": "Implement Core language endpoint/AI client",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0803-T04",
+            "title": "Build analysis panel UI",
+            "component": "Web",
+            "estimate": 3
+          },
+          {
+            "id": "US-0803-T05",
+            "title": "Add structured-output tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0804",
+        "title": "Save vocabulary to review",
+        "persona": "Language learner",
+        "value": "save a useful word/phrase with context and optionally create a flashcard",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-0803",
+          "US-0604"
+        ],
+        "acceptanceCriteria": [
+          "Saved item retains source/segment context.",
+          "Create-flashcard uses the existing Review module and scheduler."
+        ],
+        "tasks": [
+          {
+            "id": "US-0804-T01",
+            "title": "Implement VocabularyItem aggregate/repository",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0804-T02",
+            "title": "Implement vocabulary REST endpoints",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-0804-T03",
+            "title": "Implement vocabulary-to-flashcard application port",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0804-T04",
+            "title": "Build save/review UX",
+            "component": "Web",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E9",
+    "title": "Adaptive Tutor Modes",
+    "goal": "Use learning state and source evidence to teach interactively without letting the model become the source of truth.",
+    "priority": "P1",
+    "phase": "Sprint 14",
+    "stories": [
+      {
+        "id": "US-0901",
+        "title": "Socratic tutor mode",
+        "persona": "Learner",
+        "value": "be guided by questions rather than receiving an immediate answer",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0404",
+          "US-0703"
+        ],
+        "acceptanceCriteria": [
+          "Mode uses notebook evidence and learner state context.",
+          "Tutor can ask/follow up but cannot mutate mastery merely by conversation."
+        ],
+        "tasks": [
+          {
+            "id": "US-0901-T01",
+            "title": "Define tutor state contract",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0901-T02",
+            "title": "Implement Socratic workflow",
+            "component": "AI",
+            "estimate": 3
+          },
+          {
+            "id": "US-0901-T03",
+            "title": "Add mode handling in conversation protocol",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0901-T04",
+            "title": "Build tutor mode selector/UX",
+            "component": "Web",
+            "estimate": 2
+          },
+          {
+            "id": "US-0901-T05",
+            "title": "Add groundedness/tutor behavior tests",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-0902",
+        "title": "Feynman evaluation mode",
+        "persona": "Learner",
+        "value": "explain a concept and receive structured feedback on gaps/misconceptions",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0901"
+        ],
+        "acceptanceCriteria": [
+          "AI returns structured rubric with correct/missing/misconception sections.",
+          "Any mastery evidence from rubric is conservative and must pass Core validation."
+        ],
+        "tasks": [
+          {
+            "id": "US-0902-T01",
+            "title": "Define Feynman rubric schema",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-0902-T02",
+            "title": "Implement grounded Feynman evaluator",
+            "component": "AI",
+            "estimate": 3
+          },
+          {
+            "id": "US-0902-T03",
+            "title": "Define Core evidence policy for rubric scores",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-0902-T04",
+            "title": "Add evaluation calibration fixtures",
+            "component": "Test",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E10",
+    "title": "Observability, Security & Production",
+    "goal": "Make the beta deployable, diagnosable and resilient enough for real users.",
+    "priority": "P0",
+    "phase": "Sprint 0-16",
+    "stories": [
+      {
+        "id": "US-1001",
+        "title": "Distributed tracing and structured logs",
+        "persona": "Operator",
+        "value": "trace one user action across Core, AI, RabbitMQ and workers",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0001"
+        ],
+        "acceptanceCriteria": [
+          "HTTP/internal HTTP/RabbitMQ spans share trace context.",
+          "Logs include service, environment, traceId and safe resource identifiers.",
+          "Raw secrets/source content are not logged by default."
+        ],
+        "tasks": [
+          {
+            "id": "US-1001-T01",
+            "title": "Add OpenTelemetry to Core",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1001-T02",
+            "title": "Add OpenTelemetry to FastAPI/worker",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1001-T03",
+            "title": "Propagate trace/correlation headers/events",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1001-T04",
+            "title": "Implement structured JSON logging/redaction",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1001-T05",
+            "title": "Create trace smoke test",
+            "component": "Test",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-1002",
+        "title": "Metrics and dashboards",
+        "persona": "Operator",
+        "value": "see platform, queue and AI health before users report problems",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-1001"
+        ],
+        "acceptanceCriteria": [
+          "Dashboard includes API latency/errors, queue depth/age, worker failures, WS connections and AI cost/latency.",
+          "Alert thresholds exist for critical failures."
+        ],
+        "tasks": [
+          {
+            "id": "US-1002-T01",
+            "title": "Expose Core/AI/worker metrics",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1002-T02",
+            "title": "Configure collector/metrics backend for local/staging",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1002-T03",
+            "title": "Create ingestion dashboard",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1002-T04",
+            "title": "Create chat/AI cost dashboard",
+            "component": "Observability",
+            "estimate": 2
+          },
+          {
+            "id": "US-1002-T05",
+            "title": "Define baseline alerts",
+            "component": "Operations",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-1003",
+        "title": "AI and tenant security test suite",
+        "persona": "Operator",
+        "value": "prevent prompt/data boundaries from becoming production vulnerabilities",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0402",
+          "US-0103"
+        ],
+        "acceptanceCriteria": [
+          "Cross-tenant access tests exist for every high-risk resource.",
+          "Prompt-injection corpus confirms retrieved content cannot grant tools/permissions.",
+          "URL ingestion blocks SSRF to private/metadata networks."
+        ],
+        "tasks": [
+          {
+            "id": "US-1003-T01",
+            "title": "Build authorization matrix integration suite",
+            "component": "Security",
+            "estimate": 3
+          },
+          {
+            "id": "US-1003-T02",
+            "title": "Build indirect prompt injection test corpus",
+            "component": "Security",
+            "estimate": 3
+          },
+          {
+            "id": "US-1003-T03",
+            "title": "Add SSRF/private-network URL tests",
+            "component": "Security",
+            "estimate": 2
+          },
+          {
+            "id": "US-1003-T04",
+            "title": "Add dependency/SAST scanning to CI",
+            "component": "DevOps",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-1004",
+        "title": "Rate limits, quotas and cost accounting",
+        "persona": "Operator",
+        "value": "protect provider cost and platform capacity",
+        "priority": "P0",
+        "points": 8,
+        "depends": [
+          "US-0101",
+          "US-0404"
+        ],
+        "acceptanceCriteria": [
+          "AI requests are limited by user/plan and active-generation concurrency.",
+          "Model/token/cost metrics are persisted per AI run.",
+          "Quota errors are stable and visible to client."
+        ],
+        "tasks": [
+          {
+            "id": "US-1004-T01",
+            "title": "Implement Redis-backed rate limit abstraction",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-1004-T02",
+            "title": "Implement AI usage recording",
+            "component": "AI",
+            "estimate": 2
+          },
+          {
+            "id": "US-1004-T03",
+            "title": "Implement plan quota policy",
+            "component": "Core",
+            "estimate": 3
+          },
+          {
+            "id": "US-1004-T04",
+            "title": "Integrate quota checks in WS/artifact flows",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-1004-T05",
+            "title": "Add denial-of-wallet tests",
+            "component": "Security",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-1005",
+        "title": "Production AWS deployment with Terraform",
+        "persona": "Operator",
+        "value": "deploy reproducibly without manual snowflake infrastructure",
+        "priority": "P0",
+        "points": 13,
+        "depends": [
+          "US-0003",
+          "US-1001"
+        ],
+        "acceptanceCriteria": [
+          "Terraform creates environment infrastructure from reviewed configuration.",
+          "CI deploys immutable images to staging and supports controlled promotion.",
+          "TLS, secrets, backups and rollback procedure are documented/tested."
+        ],
+        "tasks": [
+          {
+            "id": "US-1005-T01",
+            "title": "Design VPC/network/security groups",
+            "component": "Infrastructure",
+            "estimate": 3
+          },
+          {
+            "id": "US-1005-T02",
+            "title": "Terraform RDS PostgreSQL and S3",
+            "component": "Infrastructure",
+            "estimate": 3
+          },
+          {
+            "id": "US-1005-T03",
+            "title": "Terraform Redis/broker/runtime services",
+            "component": "Infrastructure",
+            "estimate": 4
+          },
+          {
+            "id": "US-1005-T04",
+            "title": "Configure secrets management and IAM least privilege",
+            "component": "Security",
+            "estimate": 3
+          },
+          {
+            "id": "US-1005-T05",
+            "title": "Build/push immutable Docker images",
+            "component": "DevOps",
+            "estimate": 2
+          },
+          {
+            "id": "US-1005-T06",
+            "title": "Implement staging deployment pipeline",
+            "component": "DevOps",
+            "estimate": 3
+          },
+          {
+            "id": "US-1005-T07",
+            "title": "Document migration/rollback/runbooks",
+            "component": "Operations",
+            "estimate": 3
+          },
+          {
+            "id": "US-1005-T08",
+            "title": "Run backup/restore rehearsal",
+            "component": "Operations",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-1006",
+        "title": "Load and resilience test",
+        "persona": "Operator",
+        "value": "know the first bottlenecks before public beta",
+        "priority": "P1",
+        "points": 8,
+        "depends": [
+          "US-0404",
+          "US-1002"
+        ],
+        "acceptanceCriteria": [
+          "k6 test covers CRUD, chat start/WS concurrency and ingestion burst.",
+          "Results capture p95, error rates, resource usage and bottlenecks."
+        ],
+        "tasks": [
+          {
+            "id": "US-1006-T01",
+            "title": "Create k6 REST scenarios",
+            "component": "Test",
+            "estimate": 2
+          },
+          {
+            "id": "US-1006-T02",
+            "title": "Create WebSocket concurrency scenario",
+            "component": "Test",
+            "estimate": 3
+          },
+          {
+            "id": "US-1006-T03",
+            "title": "Create ingestion burst scenario",
+            "component": "Test",
+            "estimate": 2
+          },
+          {
+            "id": "US-1006-T04",
+            "title": "Run failure injection for provider/broker restart",
+            "component": "Test",
+            "estimate": 2
+          },
+          {
+            "id": "US-1006-T05",
+            "title": "Write load-test report and tuning actions",
+            "component": "Operations",
+            "estimate": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "E11",
+    "title": "Product Analytics & Beta Validation",
+    "goal": "Measure activation, learning loops and reliability with real users instead of optimizing feature count.",
+    "priority": "P1",
+    "phase": "Sprint 15-16",
+    "stories": [
+      {
+        "id": "US-1101",
+        "title": "Product event taxonomy",
+        "persona": "Product owner",
+        "value": "measure the full source-to-mastery funnel",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-0001"
+        ],
+        "acceptanceCriteria": [
+          "Events have stable names/properties and avoid sensitive raw content.",
+          "Activation and learning-loop events can be queried end-to-end."
+        ],
+        "tasks": [
+          {
+            "id": "US-1101-T01",
+            "title": "Define analytics event catalog",
+            "component": "Analytics",
+            "estimate": 2
+          },
+          {
+            "id": "US-1101-T02",
+            "title": "Implement server-side event emitter",
+            "component": "Core",
+            "estimate": 2
+          },
+          {
+            "id": "US-1101-T03",
+            "title": "Instrument web funnel events",
+            "component": "Web",
+            "estimate": 2
+          },
+          {
+            "id": "US-1101-T04",
+            "title": "Validate events in staging",
+            "component": "Test",
+            "estimate": 1
+          }
+        ]
+      },
+      {
+        "id": "US-1102",
+        "title": "Learning overview analytics",
+        "persona": "Learner",
+        "value": "see outcome-focused progress rather than only time spent",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-0703",
+          "US-1101"
+        ],
+        "acceptanceCriteria": [
+          "Overview includes study activity, quiz/review outcomes and mastery changes.",
+          "Metrics clearly distinguish activity from demonstrated mastery."
+        ],
+        "tasks": [
+          {
+            "id": "US-1102-T01",
+            "title": "Implement analytics read queries",
+            "component": "Analytics",
+            "estimate": 2
+          },
+          {
+            "id": "US-1102-T02",
+            "title": "Implement overview endpoints",
+            "component": "Core",
+            "estimate": 1
+          },
+          {
+            "id": "US-1102-T03",
+            "title": "Build dashboard UI",
+            "component": "Web",
+            "estimate": 2
+          }
+        ]
+      },
+      {
+        "id": "US-1103",
+        "title": "Invite beta cohort and collect feedback",
+        "persona": "Product owner",
+        "value": "validate whether StudyOS closes a real learning loop",
+        "priority": "P1",
+        "points": 5,
+        "depends": [
+          "US-1005",
+          "US-1101"
+        ],
+        "acceptanceCriteria": [
+          "At least first invited cohort can onboard without developer database edits.",
+          "Feedback records product goal, distrust points and return intent.",
+          "Critical reliability issues are triaged before increasing cohort size."
+        ],
+        "tasks": [
+          {
+            "id": "US-1103-T01",
+            "title": "Create beta onboarding checklist",
+            "component": "Product",
+            "estimate": 1
+          },
+          {
+            "id": "US-1103-T02",
+            "title": "Add in-product feedback entry points",
+            "component": "Web",
+            "estimate": 2
+          },
+          {
+            "id": "US-1103-T03",
+            "title": "Create operator cohort tracking query/dashboard",
+            "component": "Analytics",
+            "estimate": 1
+          },
+          {
+            "id": "US-1103-T04",
+            "title": "Run 5-user observation sessions and record issues",
+            "component": "Product",
+            "estimate": 3
+          },
+          {
+            "id": "US-1103-T05",
+            "title": "Prioritize fixes using value/risk/effort",
+            "component": "Product",
+            "estimate": 1
+          }
+        ]
+      }
+    ]
+  }
+]

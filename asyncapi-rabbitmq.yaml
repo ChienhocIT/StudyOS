@@ -1,0 +1,289 @@
+asyncapi: '2.6.0'
+info:
+  title: StudyOS RabbitMQ Contracts
+  version: '0.1.0'
+  description: >-
+    Phase 0 asynchronous contract. Delivery semantics are at-least-once; all consumers must be idempotent.
+    Commands use *.requested.v1 routing keys. Facts use past-tense *.v1 routing keys.
+defaultContentType: application/json
+servers:
+  local:
+    url: amqp://rabbitmq:5672
+    protocol: amqp
+    description: Docker Compose broker
+  production:
+    url: amqps://rabbitmq.example.internal:5671
+    protocol: amqps
+    description: Placeholder managed production broker
+channels:
+  source.parse.requested.v1:
+    publish:
+      operationId: requestSourceParse
+      message: { $ref: '#/components/messages/SourceParseRequested' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.source.commands, type: topic, durable: true, autoDelete: false } }
+  source.parsed.v1:
+    subscribe:
+      operationId: consumeSourceParsed
+      message: { $ref: '#/components/messages/SourceParsed' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.source.events, type: topic, durable: true, autoDelete: false } }
+  source.indexed.v1:
+    subscribe:
+      operationId: consumeSourceIndexed
+      message: { $ref: '#/components/messages/SourceIndexed' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.source.events, type: topic, durable: true, autoDelete: false } }
+  source.ready.v1:
+    subscribe:
+      operationId: consumeSourceReady
+      message: { $ref: '#/components/messages/SourceReady' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.source.events, type: topic, durable: true, autoDelete: false } }
+  source.processing.failed.v1:
+    subscribe:
+      operationId: consumeSourceFailed
+      message: { $ref: '#/components/messages/SourceProcessingFailed' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.source.events, type: topic, durable: true, autoDelete: false } }
+  transcript.fetch.requested.v1:
+    publish:
+      operationId: requestTranscriptFetch
+      message: { $ref: '#/components/messages/TranscriptFetchRequested' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.source.commands, type: topic, durable: true, autoDelete: false } }
+  source.transcript.ready.v1:
+    subscribe:
+      operationId: consumeTranscriptReady
+      message: { $ref: '#/components/messages/SourceTranscriptReady' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.source.events, type: topic, durable: true, autoDelete: false } }
+  quiz.generate.requested.v1:
+    publish:
+      operationId: requestQuizGeneration
+      message: { $ref: '#/components/messages/QuizGenerateRequested' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.artifact.commands, type: topic, durable: true, autoDelete: false } }
+  quiz.generated.v1:
+    subscribe:
+      operationId: consumeQuizGenerated
+      message: { $ref: '#/components/messages/QuizGenerated' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.artifact.events, type: topic, durable: true, autoDelete: false } }
+  flashcards.generate.requested.v1:
+    publish:
+      operationId: requestFlashcardsGeneration
+      message: { $ref: '#/components/messages/FlashcardsGenerateRequested' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.artifact.commands, type: topic, durable: true, autoDelete: false } }
+  quiz.attempt.completed.v1:
+    subscribe:
+      operationId: consumeQuizAttemptCompleted
+      message: { $ref: '#/components/messages/QuizAttemptCompleted' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.learning.events, type: topic, durable: true, autoDelete: false } }
+  flashcard.reviewed.v1:
+    subscribe:
+      operationId: consumeFlashcardReviewed
+      message: { $ref: '#/components/messages/FlashcardReviewed' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.learning.events, type: topic, durable: true, autoDelete: false } }
+  mastery.updated.v1:
+    subscribe:
+      operationId: consumeMasteryUpdated
+      message: { $ref: '#/components/messages/MasteryUpdated' }
+    bindings:
+      amqp: { is: routingKey, exchange: { name: studyos.learning.events, type: topic, durable: true, autoDelete: false } }
+components:
+  schemas:
+    EventEnvelope:
+      type: object
+      required: [eventId, eventType, eventVersion, occurredAt, producer, traceId, correlationId, workspaceId, aggregateType, aggregateId, payload]
+      properties:
+        eventId: { type: string, format: uuid }
+        eventType: { type: string }
+        eventVersion: { type: integer, minimum: 1 }
+        occurredAt: { type: string, format: date-time }
+        producer: { type: string }
+        traceId: { type: string }
+        correlationId: { type: string }
+        causationId: { type: [string, 'null'] }
+        workspaceId: { type: string, format: uuid }
+        aggregateType: { type: string }
+        aggregateId: { type: string, format: uuid }
+        payload: { type: object }
+    SourceParsePayload:
+      type: object
+      required: [sourceId, sourceVersionId, objectKey, sourceType]
+      properties:
+        sourceId: { type: string, format: uuid }
+        sourceVersionId: { type: string, format: uuid }
+        objectKey: { type: string }
+        sourceType: { type: string }
+        checksumSha256: { type: [string, 'null'] }
+    SourceParsedPayload:
+      type: object
+      required: [sourceId, sourceVersionId, normalizedObjectKey, parserVersion]
+      properties:
+        sourceId: { type: string, format: uuid }
+        sourceVersionId: { type: string, format: uuid }
+        normalizedObjectKey: { type: string }
+        parserVersion: { type: string }
+        sectionCount: { type: integer }
+        language: { type: [string, 'null'] }
+    SourceIndexedPayload:
+      type: object
+      required: [sourceId, sourceVersionId, chunkCount, embeddingModel]
+      properties:
+        sourceId: { type: string, format: uuid }
+        sourceVersionId: { type: string, format: uuid }
+        chunkCount: { type: integer }
+        embeddingModel: { type: string }
+        retrievalConfigVersion: { type: string }
+    SourceReadyPayload:
+      type: object
+      required: [sourceId, sourceVersionId]
+      properties:
+        sourceId: { type: string, format: uuid }
+        sourceVersionId: { type: string, format: uuid }
+        conceptCount: { type: integer }
+        transcriptSegmentCount: { type: integer }
+    SourceFailedPayload:
+      type: object
+      required: [sourceId, sourceVersionId, stage, errorCode, retryable]
+      properties:
+        sourceId: { type: string, format: uuid }
+        sourceVersionId: { type: string, format: uuid }
+        stage: { type: string }
+        errorCode: { type: string }
+        retryable: { type: boolean }
+        safeDetail: { type: [string, 'null'] }
+    TranscriptFetchPayload:
+      type: object
+      required: [sourceId, sourceVersionId, canonicalUri]
+      properties:
+        sourceId: { type: string, format: uuid }
+        sourceVersionId: { type: string, format: uuid }
+        canonicalUri: { type: string, format: uri }
+        preferredLanguages: { type: array, items: { type: string } }
+    ArtifactGeneratePayload:
+      type: object
+      required: [artifactJobId, notebookId, userId, scope]
+      properties:
+        artifactJobId: { type: string, format: uuid }
+        notebookId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        scope: { type: object }
+        options: { type: object }
+    QuizGeneratedPayload:
+      type: object
+      required: [artifactJobId, quizId, questionCount]
+      properties:
+        artifactJobId: { type: string, format: uuid }
+        quizId: { type: string, format: uuid }
+        questionCount: { type: integer }
+    QuizAttemptPayload:
+      type: object
+      required: [attemptId, quizId, userId, score, evidenceIds]
+      properties:
+        attemptId: { type: string, format: uuid }
+        quizId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        score: { type: number, minimum: 0, maximum: 1 }
+        evidenceIds: { type: array, items: { type: string, format: uuid } }
+    FlashcardReviewedPayload:
+      type: object
+      required: [reviewId, cardId, userId, grade, nextReviewAt]
+      properties:
+        reviewId: { type: string, format: uuid }
+        cardId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        conceptId: { type: [string, 'null'], format: uuid }
+        grade: { type: integer, minimum: 1, maximum: 4 }
+        nextReviewAt: { type: string, format: date-time }
+    MasteryUpdatedPayload:
+      type: object
+      required: [userId, conceptId, previousScore, newScore, confidence]
+      properties:
+        userId: { type: string, format: uuid }
+        conceptId: { type: string, format: uuid }
+        previousScore: { type: number, minimum: 0, maximum: 1 }
+        newScore: { type: number, minimum: 0, maximum: 1 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidenceId: { type: [string, 'null'], format: uuid }
+  messages:
+    SourceParseRequested:
+      name: source.parse.requested.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/SourceParsePayload' } } }
+    SourceParsed:
+      name: source.parsed.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/SourceParsedPayload' } } }
+    SourceIndexed:
+      name: source.indexed.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/SourceIndexedPayload' } } }
+    SourceReady:
+      name: source.ready.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/SourceReadyPayload' } } }
+    SourceProcessingFailed:
+      name: source.processing.failed.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/SourceFailedPayload' } } }
+    TranscriptFetchRequested:
+      name: transcript.fetch.requested.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/TranscriptFetchPayload' } } }
+    SourceTranscriptReady:
+      name: source.transcript.ready.v1
+      payload: { $ref: '#/components/schemas/EventEnvelope' }
+    QuizGenerateRequested:
+      name: quiz.generate.requested.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/ArtifactGeneratePayload' } } }
+    QuizGenerated:
+      name: quiz.generated.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/QuizGeneratedPayload' } } }
+    FlashcardsGenerateRequested:
+      name: flashcards.generate.requested.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/ArtifactGeneratePayload' } } }
+    QuizAttemptCompleted:
+      name: quiz.attempt.completed.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/QuizAttemptPayload' } } }
+    FlashcardReviewed:
+      name: flashcard.reviewed.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/FlashcardReviewedPayload' } } }
+    MasteryUpdated:
+      name: mastery.updated.v1
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - { type: object, properties: { payload: { $ref: '#/components/schemas/MasteryUpdatedPayload' } } }

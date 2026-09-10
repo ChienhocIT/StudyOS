@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studyos.local/schemas/event-envelope.schema.json",
+  "title": "StudyOS Event Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId","eventType","eventVersion","occurredAt","producer","traceId","correlationId","workspaceId","aggregateType","aggregateId","payload"],
+  "properties": {
+    "eventId": {"type":"string","format":"uuid"},
+    "eventType": {"type":"string","minLength":1},
+    "eventVersion": {"type":"integer","minimum":1},
+    "occurredAt": {"type":"string","format":"date-time"},
+    "producer": {"type":"string","minLength":1},
+    "traceId": {"type":"string","minLength":1},
+    "correlationId": {"type":"string","minLength":1},
+    "causationId": {"type":["string","null"]},
+    "workspaceId": {"type":"string","format":"uuid"},
+    "aggregateType": {"type":"string","minLength":1},
+    "aggregateId": {"type":"string","format":"uuid"},
+    "payload": {"type":"object"}
+  }
+}

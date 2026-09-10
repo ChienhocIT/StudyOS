@@ -1,0 +1,38 @@
+// StudyOS Phase 0 ERD source. Complete field definitions live in schema.sql.
+Table users { id uuid [pk] email varchar [unique] display_name varchar }
+Table workspaces { id uuid [pk] owner_id uuid [ref: > users.id] name varchar }
+Table workspace_members { workspace_id uuid [ref: > workspaces.id] user_id uuid [ref: > users.id] role varchar Indexes { (workspace_id,user_id) [pk] } }
+Table notebooks { id uuid [pk] workspace_id uuid [ref: > workspaces.id] created_by uuid [ref: > users.id] title varchar }
+Table sources { id uuid [pk] workspace_id uuid [ref: > workspaces.id] notebook_id uuid [ref: > notebooks.id] current_version_id uuid status varchar }
+Table source_versions { id uuid [pk] source_id uuid [ref: > sources.id] version_no int object_key varchar checksum_sha256 varchar }
+Ref: sources.current_version_id > source_versions.id
+Table document_sections { id uuid [pk] source_version_id uuid [ref: > source_versions.id] parent_section_id uuid [ref: > document_sections.id] heading text }
+Table document_chunks { id uuid [pk] workspace_id uuid [ref: > workspaces.id] notebook_id uuid [ref: > notebooks.id] source_version_id uuid [ref: > source_versions.id] section_id uuid [ref: > document_sections.id] text text }
+Table transcript_segments { id uuid [pk] source_version_id uuid [ref: > source_versions.id] start_ms bigint end_ms bigint text text }
+Table concepts { id uuid [pk] workspace_id uuid [ref: > workspaces.id] notebook_id uuid [ref: > notebooks.id] normalized_name varchar }
+Table concept_relations { id uuid [pk] notebook_id uuid [ref: > notebooks.id] from_concept_id uuid [ref: > concepts.id] to_concept_id uuid [ref: > concepts.id] relation_type varchar }
+Table chunk_concepts { chunk_id uuid [ref: > document_chunks.id] concept_id uuid [ref: > concepts.id] Indexes { (chunk_id,concept_id) [pk] } }
+Table user_concept_mastery { user_id uuid [ref: > users.id] concept_id uuid [ref: > concepts.id] mastery_score decimal confidence decimal Indexes { (user_id,concept_id) [pk] } }
+Table mastery_evidence { id uuid [pk] user_id uuid [ref: > users.id] concept_id uuid [ref: > concepts.id] evidence_type varchar score decimal weight decimal }
+Table conversations { id uuid [pk] workspace_id uuid [ref: > workspaces.id] notebook_id uuid [ref: > notebooks.id] user_id uuid [ref: > users.id] mode varchar }
+Table messages { id uuid [pk] conversation_id uuid [ref: > conversations.id] role varchar content text sequence_no bigint }
+Table citations { id uuid [pk] message_id uuid [ref: > messages.id] chunk_id uuid [ref: > document_chunks.id] citation_key varchar }
+Table message_feedback { id uuid [pk] message_id uuid [ref: > messages.id] user_id uuid [ref: > users.id] rating int }
+Table notes { id uuid [pk] workspace_id uuid [ref: > workspaces.id] notebook_id uuid [ref: > notebooks.id] user_id uuid [ref: > users.id] title varchar }
+Table note_citations { note_id uuid [ref: > notes.id] citation_id uuid [ref: > citations.id] Indexes { (note_id,citation_id) [pk] } }
+Table artifact_jobs { id uuid [pk] notebook_id uuid [ref: > notebooks.id] user_id uuid [ref: > users.id] artifact_type varchar status varchar }
+Table quizzes { id uuid [pk] notebook_id uuid [ref: > notebooks.id] user_id uuid [ref: > users.id] artifact_job_id uuid [ref: > artifact_jobs.id] }
+Table quiz_questions { id uuid [pk] quiz_id uuid [ref: > quizzes.id] prompt text }
+Table quiz_question_concepts { question_id uuid [ref: > quiz_questions.id] concept_id uuid [ref: > concepts.id] Indexes { (question_id,concept_id) [pk] } }
+Table quiz_attempts { id uuid [pk] quiz_id uuid [ref: > quizzes.id] user_id uuid [ref: > users.id] score decimal }
+Table quiz_answers { id uuid [pk] attempt_id uuid [ref: > quiz_attempts.id] question_id uuid [ref: > quiz_questions.id] }
+Table flashcard_decks { id uuid [pk] notebook_id uuid [ref: > notebooks.id] user_id uuid [ref: > users.id] artifact_job_id uuid [ref: > artifact_jobs.id] }
+Table flashcards { id uuid [pk] deck_id uuid [ref: > flashcard_decks.id] concept_id uuid [ref: > concepts.id] source_chunk_id uuid [ref: > document_chunks.id] }
+Table flashcard_reviews { id uuid [pk] card_id uuid [ref: > flashcards.id] user_id uuid [ref: > users.id] grade int }
+Table learning_goals { id uuid [pk] user_id uuid [ref: > users.id] workspace_id uuid [ref: > workspaces.id] title varchar }
+Table learning_recommendations { id uuid [pk] user_id uuid [ref: > users.id] notebook_id uuid [ref: > notebooks.id] concept_id uuid [ref: > concepts.id] action_type varchar }
+Table study_sessions { id uuid [pk] user_id uuid [ref: > users.id] notebook_id uuid [ref: > notebooks.id] activity_type varchar }
+Table vocabulary_items { id uuid [pk] user_id uuid [ref: > users.id] notebook_id uuid [ref: > notebooks.id] source_id uuid [ref: > sources.id] transcript_segment_id uuid [ref: > transcript_segments.id] term varchar }
+Table ai_runs { id uuid [pk] user_id uuid [ref: > users.id] workspace_id uuid [ref: > workspaces.id] feature varchar model varchar trace_id varchar }
+Table outbox_events { id uuid [pk] aggregate_type varchar aggregate_id uuid event_type varchar payload_json jsonb }
+Table processed_events { consumer_name varchar event_id uuid Indexes { (consumer_name,event_id) [pk] } }

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studyos.local/schemas/websocket-protocol.schema.json",
+  "title": "StudyOS WebSocket Envelope",
+  "type": "object",
+  "required": ["type", "protocolVersion", "eventId", "timestamp", "conversationId", "payload"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "session.ready", "chat.message.send", "chat.generation.cancel", "chat.resume", "ping", "pong",
+        "assistant.started", "retrieval.completed", "assistant.delta", "citation.provisional",
+        "tool.started", "tool.completed", "assistant.completed", "assistant.failed", "usage.updated", "error"
+      ]
+    },
+    "protocolVersion": {"const": "1.0"},
+    "eventId": {"type": "string", "format": "uuid"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "traceId": {"type": ["string", "null"]},
+    "requestId": {"type": ["string", "null"], "format": "uuid"},
+    "conversationId": {"type": "string", "format": "uuid"},
+    "messageId": {"type": ["string", "null"], "format": "uuid"},
+    "sequence": {"type": ["integer", "null"], "minimum": 0},
+    "payload": {"type": "object"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1246" viewBox="0 0 1760 1246">
+<defs><marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#334155"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#0F172A}.p{font-size:13px;font-weight:700}.m{font-size:12px}.n{font-size:11px}.num{font-size:10px;font-weight:700}</style>
+<rect x="22.0" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="100.0" y="92" text-anchor="middle">Browser</text>
+<line x1="100.0" y1="124" x2="100.0" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="244.8571428571429" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="322.8571428571429" y="92" text-anchor="middle">Core API</text>
+<line x1="322.8571428571429" y1="124" x2="322.8571428571429" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="467.7142857142858" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="545.7142857142858" y="92" text-anchor="middle">S3/MinIO</text>
+<line x1="545.7142857142858" y1="124" x2="545.7142857142858" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="690.5714285714286" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="768.5714285714286" y="92" text-anchor="middle">PostgreSQL</text>
+<line x1="768.5714285714286" y1="124" x2="768.5714285714286" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="913.4285714285714" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="991.4285714285714" y="92" text-anchor="middle">RabbitMQ</text>
+<line x1="991.4285714285714" y1="124" x2="991.4285714285714" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="1136.2857142857142" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="1214.2857142857142" y="92" text-anchor="middle">Parse Worker</text>
+<line x1="1214.2857142857142" y1="124" x2="1214.2857142857142" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="1359.142857142857" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="1437.142857142857" y="92" text-anchor="middle">Index Worker</text>
+<line x1="1437.142857142857" y1="124" x2="1437.142857142857" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="1582.0" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="1660.0" y="92" text-anchor="middle">Enrich Worker</text>
+<line x1="1660.0" y1="124" x2="1660.0" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<text class="num" x="112.0" y="153">1</text>
+<line x1="100.0" y1="164" x2="312.8571428571429" y2="164" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="157" text-anchor="middle">POST upload-init (metadata)</text>
+<text class="num" x="334.8571428571429" y="207">2</text>
+<line x1="322.8571428571429" y1="218" x2="758.5714285714286" y2="218" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="545.7142857142858" y="211" text-anchor="middle">Create Source + SourceVersion</text>
+<text class="m" x="545.7142857142858" y="197" text-anchor="middle">status=UPLOADING</text>
+<text class="num" x="112.0" y="261">3</text>
+<line x1="322.8571428571429" y1="272" x2="110.0" y2="272" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="265" text-anchor="middle">Presigned PUT URL</text>
+<text class="num" x="112.0" y="315">4</text>
+<line x1="100.0" y1="326" x2="535.7142857142858" y2="326" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="322.8571428571429" y="319" text-anchor="middle">PUT file bytes</text>
+<text class="num" x="112.0" y="369">5</text>
+<line x1="100.0" y1="380" x2="312.8571428571429" y2="380" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="373" text-anchor="middle">POST upload-complete (checksum/size)</text>
+<text class="num" x="334.8571428571429" y="423">6</text>
+<line x1="322.8571428571429" y1="434" x2="758.5714285714286" y2="434" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="545.7142857142858" y="427" text-anchor="middle">Transaction: QUEUED + outbox event</text>
+<text class="num" x="334.8571428571429" y="477">7</text>
+<line x1="322.8571428571429" y1="488" x2="981.4285714285714" y2="488" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="657.1428571428571" y="481" text-anchor="middle">Outbox publisher -&gt; source.parse.requested.v1</text>
+<text class="num" x="1003.4285714285714" y="531">8</text>
+<line x1="991.4285714285714" y1="542" x2="1204.2857142857142" y2="542" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1102.857142857143" y="535" text-anchor="middle">Deliver parse command</text>
+<text class="num" x="557.7142857142858" y="585">9</text>
+<line x1="1214.2857142857142" y1="596" x2="555.7142857142858" y2="596" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="880.0" y="589" text-anchor="middle">Read source / write normalized artifact</text>
+<text class="num" x="1003.4285714285714" y="639">10</text>
+<line x1="1214.2857142857142" y1="650" x2="1001.4285714285714" y2="650" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1102.857142857143" y="643" text-anchor="middle">source.parsed.v1</text>
+<text class="num" x="1003.4285714285714" y="693">11</text>
+<line x1="991.4285714285714" y1="704" x2="1427.142857142857" y2="704" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1214.2857142857142" y="697" text-anchor="middle">Deliver parsed event</text>
+<text class="num" x="780.5714285714286" y="747">12</text>
+<line x1="1437.142857142857" y1="758" x2="778.5714285714286" y2="758" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1102.857142857143" y="751" text-anchor="middle">Idempotent chunks + embeddings</text>
+<text class="num" x="1003.4285714285714" y="801">13</text>
+<line x1="1437.142857142857" y1="812" x2="1001.4285714285714" y2="812" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1214.2857142857142" y="805" text-anchor="middle">source.indexed.v1</text>
+<text class="num" x="1003.4285714285714" y="855">14</text>
+<line x1="991.4285714285714" y1="866" x2="1650.0" y2="866" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1325.7142857142858" y="859" text-anchor="middle">Deliver indexed event</text>
+<text class="num" x="780.5714285714286" y="909">15</text>
+<line x1="1660.0" y1="920" x2="778.5714285714286" y2="920" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1214.2857142857142" y="913" text-anchor="middle">Concept candidates / relations</text>
+<text class="num" x="1003.4285714285714" y="963">16</text>
+<line x1="1660.0" y1="974" x2="1001.4285714285714" y2="974" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1325.7142857142858" y="967" text-anchor="middle">source.ready.v1</text>
+<text class="num" x="334.8571428571429" y="1017">17</text>
+<line x1="991.4285714285714" y1="1028" x2="332.8571428571429" y2="1028" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="657.1428571428571" y="1021" text-anchor="middle">State consumer -&gt; READY</text>
+<text class="num" x="334.8571428571429" y="1071">18</text>
+<line x1="322.8571428571429" y1="1082" x2="758.5714285714286" y2="1082" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="545.7142857142858" y="1075" text-anchor="middle">Persist READY + processing audit</text>
+</svg>

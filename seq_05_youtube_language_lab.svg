@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1246" viewBox="0 0 1760 1246">
+<defs><marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#334155"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#0F172A}.p{font-size:13px;font-weight:700}.m{font-size:12px}.n{font-size:11px}.num{font-size:10px;font-weight:700}</style>
+<rect x="22.0" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="100.0" y="92" text-anchor="middle">Browser</text>
+<line x1="100.0" y1="124" x2="100.0" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="244.8571428571429" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="322.8571428571429" y="92" text-anchor="middle">Core API</text>
+<line x1="322.8571428571429" y1="124" x2="322.8571428571429" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="467.7142857142858" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="545.7142857142858" y="92" text-anchor="middle">RabbitMQ</text>
+<line x1="545.7142857142858" y1="124" x2="545.7142857142858" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="690.5714285714286" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="768.5714285714286" y="92" text-anchor="middle">Transcript Worker</text>
+<line x1="768.5714285714286" y1="124" x2="768.5714285714286" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="913.4285714285714" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="991.4285714285714" y="92" text-anchor="middle">External Provider</text>
+<line x1="991.4285714285714" y1="124" x2="991.4285714285714" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="1136.2857142857142" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="1214.2857142857142" y="92" text-anchor="middle">PostgreSQL</text>
+<line x1="1214.2857142857142" y1="124" x2="1214.2857142857142" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="1359.142857142857" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="1437.142857142857" y="92" text-anchor="middle">FastAPI AI</text>
+<line x1="1437.142857142857" y1="124" x2="1437.142857142857" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<rect x="1582.0" y="70" width="156" height="54" rx="8" fill="#E8F0FE" stroke="#64748B"/>
+<text class="p" x="1660.0" y="92" text-anchor="middle">Review Module</text>
+<line x1="1660.0" y1="124" x2="1660.0" y2="1206" stroke="#94A3B8" stroke-dasharray="5,5"/>
+<text class="num" x="112.0" y="153">1</text>
+<line x1="100.0" y1="164" x2="312.8571428571429" y2="164" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="157" text-anchor="middle">POST source/url {YouTube URL}</text>
+<text class="num" x="334.8571428571429" y="207">2</text>
+<line x1="322.8571428571429" y1="218" x2="1204.2857142857142" y2="218" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="768.5714285714286" y="211" text-anchor="middle">Create YOUTUBE source + outbox</text>
+<text class="num" x="334.8571428571429" y="261">3</text>
+<line x1="322.8571428571429" y1="272" x2="535.7142857142858" y2="272" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="434.28571428571433" y="265" text-anchor="middle">transcript.fetch.requested.v1</text>
+<text class="num" x="557.7142857142858" y="315">4</text>
+<line x1="545.7142857142858" y1="326" x2="758.5714285714286" y2="326" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="657.1428571428571" y="319" text-anchor="middle">Deliver transcript job</text>
+<text class="num" x="780.5714285714286" y="369">5</text>
+<line x1="768.5714285714286" y1="380" x2="981.4285714285714" y2="380" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="880.0" y="373" text-anchor="middle">Fetch permitted transcript / fallback metadata</text>
+<text class="num" x="780.5714285714286" y="423">6</text>
+<line x1="991.4285714285714" y1="434" x2="778.5714285714286" y2="434" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="880.0" y="427" text-anchor="middle">Timestamped transcript or unavailable</text>
+<text class="num" x="780.5714285714286" y="477">7</text>
+<line x1="768.5714285714286" y1="488" x2="1204.2857142857142" y2="488" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="991.4285714285713" y="481" text-anchor="middle">Persist transcript_segments + source state</text>
+<text class="num" x="557.7142857142858" y="531">8</text>
+<line x1="768.5714285714286" y1="542" x2="555.7142857142858" y2="542" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="657.1428571428571" y="535" text-anchor="middle">source.transcript.ready.v1</text>
+<text class="num" x="112.0" y="585">9</text>
+<line x1="100.0" y1="596" x2="312.8571428571429" y2="596" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="589" text-anchor="middle">GET transcript segments</text>
+<text class="num" x="112.0" y="639">10</text>
+<line x1="100.0" y1="650" x2="312.8571428571429" y2="650" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="643" text-anchor="middle">POST language/analyze {segmentId}</text>
+<text class="num" x="334.8571428571429" y="693">11</text>
+<line x1="322.8571428571429" y1="704" x2="1427.142857142857" y2="704" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="880.0" y="697" text-anchor="middle">Analyze translation/vocabulary/grammar</text>
+<text class="num" x="334.8571428571429" y="747">12</text>
+<line x1="1437.142857142857" y1="758" x2="332.8571428571429" y2="758" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="880.0" y="751" text-anchor="middle">Structured language analysis</text>
+<text class="num" x="112.0" y="801">13</text>
+<line x1="322.8571428571429" y1="812" x2="110.0" y2="812" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="805" text-anchor="middle">Translation + vocabulary + grammar</text>
+<text class="num" x="112.0" y="855">14</text>
+<line x1="100.0" y1="866" x2="312.8571428571429" y2="866" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="859" text-anchor="middle">POST vocabulary/items (save term/context)</text>
+<text class="num" x="334.8571428571429" y="909">15</text>
+<line x1="322.8571428571429" y1="920" x2="1204.2857142857142" y2="920" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="768.5714285714286" y="913" text-anchor="middle">Persist vocabulary item</text>
+<text class="num" x="112.0" y="963">16</text>
+<line x1="100.0" y1="974" x2="312.8571428571429" y2="974" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="211.42857142857144" y="967" text-anchor="middle">Create flashcard from vocabulary</text>
+<text class="num" x="334.8571428571429" y="1017">17</text>
+<line x1="322.8571428571429" y1="1028" x2="1650.0" y2="1028" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="991.4285714285714" y="1021" text-anchor="middle">Create reviewable card + provenance</text>
+<text class="num" x="1226.2857142857142" y="1071">18</text>
+<line x1="1660.0" y1="1082" x2="1224.2857142857142" y2="1082" stroke="#334155" marker-end="url(#arrow)"/>
+<text class="m" x="1437.142857142857" y="1075" text-anchor="middle">Persist card/scheduler state</text>
+</svg>

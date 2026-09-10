@@ -1,0 +1,31 @@
+{
+  "clientSend": {
+    "type": "chat.message.send",
+    "protocolVersion": "1.0",
+    "eventId": "b05aac7d-dc6b-445b-876c-625ae28e91ff",
+    "timestamp": "2026-09-10T14:00:00Z",
+    "traceId": null,
+    "requestId": "797aa279-925f-4e7c-b552-4a7d3469ed67",
+    "conversationId": "b90f21c0-99fb-440b-8b30-fc90232c4cf2",
+    "messageId": null,
+    "sequence": null,
+    "payload": {
+      "content": "Explain database isolation levels using my sources.",
+      "mode": "ASK",
+      "sourceIds": [],
+      "clientContext": {"activeSourceId": null}
+    }
+  },
+  "serverDelta": {
+    "type": "assistant.delta",
+    "protocolVersion": "1.0",
+    "eventId": "cc567df9-a127-430f-8446-2b81b42700e0",
+    "timestamp": "2026-09-10T14:00:01Z",
+    "traceId": "4df4683339c44be9a31b036ce57d9e3f",
+    "requestId": "797aa279-925f-4e7c-b552-4a7d3469ed67",
+    "conversationId": "b90f21c0-99fb-440b-8b30-fc90232c4cf2",
+    "messageId": "ace7ce4f-126f-4e43-87fc-f9bb57979376",
+    "sequence": 6,
+    "payload": {"delta": "Read Committed prevents dirty reads"}
+  }
+}
