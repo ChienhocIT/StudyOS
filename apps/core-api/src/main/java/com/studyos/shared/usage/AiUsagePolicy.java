@@ -20,7 +20,12 @@ public class AiUsagePolicy {
 
     @Transactional
     public void reserve(UUID user, UUID workspace, String feature, String requestKey) {
-        if (requestKey == null || requestKey.length() > 160 || feature.length() > 64)
+        if (requestKey == null
+                || requestKey.isBlank()
+                || requestKey.length() > 160
+                || feature == null
+                || feature.isBlank()
+                || feature.length() > 64)
             throw ApiException.badRequest("VALIDATION_FAILED", "Invalid AI request identity.");
         // One user lock serializes quota checks across API nodes and feature types.
         jdbc.queryForObject("SELECT id FROM users WHERE id=? FOR UPDATE", UUID.class, user);
@@ -84,12 +89,7 @@ public class AiUsagePolicy {
         if (model.length() > 120) model = model.substring(0, 120);
         Integer input = tokenCount(usage.get("inputTokens")),
                 output = tokenCount(usage.get("outputTokens"));
-        BigDecimal cost = null;
-        if (usage.get("estimatedCostUsd") != null) {
-            cost = new BigDecimal(usage.get("estimatedCostUsd").toString());
-            if (cost.signum() < 0 || cost.compareTo(new BigDecimal("999999")) > 0)
-                throw new IllegalArgumentException("Invalid provider cost");
-        }
+        BigDecimal cost = cost(usage.get("estimatedCostUsd"));
         Map<String, Object> metadata =
                 Map.of(
                         "tokenUsageAvailable",
@@ -109,7 +109,7 @@ public class AiUsagePolicy {
                 input,
                 output,
                 cost,
-                trace == null ? UUID.randomUUID().toString() : trace,
+                trace == null || trace.length() > 64 ? UUID.randomUUID().toString() : trace,
                 Json.write(metadata),
                 row.get("id"));
         jdbc.update(
@@ -128,8 +128,25 @@ public class AiUsagePolicy {
 
     private Integer tokenCount(Object value) {
         if (value == null) return null;
-        if (!(value instanceof Number n) || n.longValue() < 0 || n.longValue() > Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Invalid token count");
-        return n.intValue();
+        if (!(value instanceof Number)) return null;
+        try {
+            int count = new BigDecimal(value.toString()).intValueExact();
+            return count >= 0 ? count : null;
+        } catch (NumberFormatException | ArithmeticException ignored) {
+            return null;
+        }
+    }
+
+    // Optional provider telemetry must not roll back a validated business result.
+    // Invalid or absent measurements remain unavailable rather than becoming zero.
+    private BigDecimal cost(Object value) {
+        if (value == null) return null;
+        try {
+            BigDecimal parsed = new BigDecimal(value.toString());
+            if (parsed.signum() < 0 || parsed.compareTo(new BigDecimal("999999")) > 0) return null;
+            return parsed.setScale(6, java.math.RoundingMode.HALF_UP);
+        } catch (NumberFormatException | ArithmeticException ignored) {
+            return null;
+        }
     }
 }

@@ -42,7 +42,7 @@ public class LearningController {
             @NotBlank @Size(max = 240) String title,
             @Size(max = 10000) String description,
             String targetDate,
-            @Min(15) @Max(10080) Integer weeklyMinutes) {}
+            @Min(15) @Max(10080) java.math.BigDecimal weeklyMinutes) {}
 
     @PostMapping("/learning/goals")
     @ResponseStatus(org.springframework.http.HttpStatus.CREATED)

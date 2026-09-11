@@ -2,6 +2,7 @@ package com.studyos.notebook.infrastructure;
 
 import com.studyos.notebook.application.port.NotebookRepository;
 import com.studyos.shared.persistence.Rows;
+import com.studyos.shared.web.ApiException;
 import java.util.*;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -44,14 +45,16 @@ public class NotebookJdbcRepository implements NotebookRepository {
     }
 
     public void update(UUID id, String title, String description, String goal, String status) {
-        db.sql(
-                        "update notebooks set title=coalesce(:t,title),description=coalesce(:d,description),goal_text=coalesce(:g,goal_text),status=coalesce(cast(:s as notebook_status),status),updated_at=now() where id=:id")
-                .param("id", id)
-                .param("t", title)
-                .param("d", description)
-                .param("g", goal)
-                .param("s", status)
-                .update();
+        int changed =
+                db.sql(
+                                "update notebooks set title=coalesce(:t,title),description=coalesce(:d,description),goal_text=coalesce(:g,goal_text),status=coalesce(cast(:s as notebook_status),status),updated_at=now() where id=:id and status<>'DELETED'")
+                        .param("id", id)
+                        .param("t", title)
+                        .param("d", description)
+                        .param("g", goal)
+                        .param("s", status)
+                        .update();
+        if (changed == 0) throw ApiException.notFound("NOTEBOOK_NOT_FOUND", "Notebook not found.");
     }
 
     public void delete(UUID id) {

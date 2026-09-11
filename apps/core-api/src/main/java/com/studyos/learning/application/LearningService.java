@@ -137,14 +137,21 @@ public class LearningService implements LearningEvidenceGateway, ConceptAcceptan
             String title,
             String description,
             String date,
-            Integer minutes) {
+            Number minutes) {
         workspaces.requireMember(user, workspace);
-        validateGoal(Map.of("title", title));
-        if (minutes != null && (minutes < 15 || minutes > 10080))
-            throw ApiException.badRequest(
-                    "VALIDATION_FAILED", "Weekly minutes must be between 15 and 10080.");
-        if (date != null) java.time.LocalDate.parse(date);
-        return store.createGoal(user, workspace, title.strip(), description, date, minutes);
+        Map<String, Object> input = new LinkedHashMap<>();
+        input.put("title", title);
+        input.put("description", description);
+        input.put("targetDate", date);
+        input.put("weeklyMinutes", minutes);
+        var values = GoalChanges.validated(input);
+        return store.createGoal(
+                user,
+                workspace,
+                (String) values.get("title"),
+                description,
+                (String) values.get("targetDate"),
+                (Integer) values.get("weeklyMinutes"));
     }
 
     @Transactional
@@ -154,30 +161,11 @@ public class LearningService implements LearningEvidenceGateway, ConceptAcceptan
                         .orElseThrow(
                                 () -> ApiException.notFound("GOAL_NOT_FOUND", "Goal not found."));
         workspaces.requireMember(user, Rows.uuid(existing, "workspaceId"));
-        validateGoal(changes);
-        return store.updateGoal(user, goal, changes);
+        return store.updateGoal(user, goal, GoalChanges.validated(changes));
     }
 
     @Transactional
     public List<Map<String, Object>> recommendations(UUID user) {
         return store.recommendations(user);
-    }
-
-    private void validateGoal(Map<String, Object> changes) {
-        if (changes.containsKey("title")
-                && (!(changes.get("title") instanceof String s) || s.isBlank() || s.length() > 240))
-            throw ApiException.badRequest(
-                    "VALIDATION_FAILED", "Goal title must contain 1 to 240 characters.");
-        if (changes.containsKey("status")
-                && !Set.of("ACTIVE", "PAUSED", "COMPLETED", "CANCELLED")
-                        .contains(changes.get("status")))
-            throw ApiException.badRequest("VALIDATION_FAILED", "Invalid goal status.");
-        if (changes.get("weeklyMinutes") != null
-                && (!(changes.get("weeklyMinutes") instanceof Number n)
-                        || n.intValue() < 15
-                        || n.intValue() > 10080))
-            throw ApiException.badRequest("VALIDATION_FAILED", "Invalid weekly minutes.");
-        if (changes.get("targetDate") != null)
-            java.time.LocalDate.parse(changes.get("targetDate").toString());
     }
 }

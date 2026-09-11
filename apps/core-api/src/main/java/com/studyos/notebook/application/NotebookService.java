@@ -3,6 +3,7 @@ package com.studyos.notebook.application;
 import com.studyos.notebook.application.port.NotebookRepository;
 import com.studyos.shared.persistence.Rows;
 import com.studyos.shared.web.ApiException;
+import com.studyos.source.application.SourceScopeCleanup;
 import com.studyos.workspace.application.WorkspaceAuthorization;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -12,10 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotebookService implements NotebookAccess {
     private final NotebookRepository repo;
     private final WorkspaceAuthorization access;
+    private final SourceScopeCleanup cleanup;
 
-    public NotebookService(NotebookRepository repo, WorkspaceAuthorization access) {
+    public NotebookService(
+            NotebookRepository repo, WorkspaceAuthorization access, SourceScopeCleanup cleanup) {
         this.repo = repo;
         this.access = access;
+        this.cleanup = cleanup;
     }
 
     public Map<String, Object> get(UUID user, UUID id) {
@@ -65,6 +69,7 @@ public class NotebookService implements NotebookAccess {
     public void delete(UUID user, UUID id) {
         var scope = requireRead(user, id);
         access.requireRole(user, scope.workspaceId(), "OWNER", "ADMIN");
+        cleanup.notebook(scope.workspaceId(), id);
         repo.delete(id);
     }
 }

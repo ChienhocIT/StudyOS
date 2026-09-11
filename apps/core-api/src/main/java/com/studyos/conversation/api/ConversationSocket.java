@@ -108,7 +108,10 @@ public class ConversationSocket extends TextWebSocketHandler implements MessageL
                                         false,
                                         "lastSequence",
                                         replay.lastSequence()));
-                    else for (String event : replay.events()) send(session, event);
+                    else
+                        for (String event : replay.events()) {
+                            if (!sendAuthorized(session, event)) break;
+                        }
                 }
                 case "chat.generation.cancel" -> {
                     if (request == null)
@@ -281,6 +284,9 @@ public class ConversationSocket extends TextWebSocketHandler implements MessageL
             if (!completed[0] && service.active(turn.conversationId(), turn.requestId()))
                 throw new IllegalStateException("AI stream ended without completion");
         } catch (CancellationException ignored) {
+            ai.cancel(turn.conversationId(), turn.requestId());
+            // Covers upstream cancellation not initiated by an explicit client cancel.
+            service.failed(turn, "");
         } catch (Exception e) {
             log.warn(
                     "Chat stream failed conversation={} request={} cause={}",
@@ -324,9 +330,33 @@ public class ConversationSocket extends TextWebSocketHandler implements MessageL
                 ai.cancel(id, request);
             }
             for (var session : sessions.values())
-                if (id.equals(conversation(session))) send(session, value);
+                if (id.equals(conversation(session))) {
+                    try {
+                        sendAuthorized(session, value);
+                    } catch (Exception unavailable) {
+                        sessions.remove(session.getId());
+                        if (session.isOpen()) session.close(CloseStatus.SERVER_ERROR);
+                    }
+                }
         } catch (Exception ignored) {
         }
+    }
+
+    private boolean sendAuthorized(WebSocketSession session, String value) throws Exception {
+        var frame = Json.object(value);
+        UUID request =
+                frame.get("requestId") == null
+                        ? null
+                        : UUID.fromString(frame.get("requestId").toString());
+        if (!service.canReceive(user(session), conversation(session), request)) {
+            sessions.remove(session.getId());
+            if (request != null && !service.active(conversation(session), request))
+                ai.cancel(conversation(session), request);
+            if (session.isOpen()) session.close(CloseStatus.POLICY_VIOLATION);
+            return false;
+        }
+        send(session, value);
+        return true;
     }
 
     private void direct(

@@ -67,10 +67,12 @@ public class PostgresStudioStore implements StudioStore {
         return jdbc
                 .query(
                         """
-                SELECT j.*,n.workspace_id FROM artifact_jobs j JOIN notebooks n ON n.id=j.notebook_id
-                JOIN workspaces w ON w.id=n.workspace_id AND w.status='ACTIVE'
-                JOIN workspace_members m ON m.workspace_id=n.workspace_id AND m.user_id=j.user_id
-                WHERE j.id=? AND n.workspace_id=? AND n.status='ACTIVE' FOR UPDATE OF j
+                SELECT j.*,n.workspace_id,
+                  (n.status='ACTIVE' AND EXISTS(SELECT 1 FROM workspaces w WHERE w.id=n.workspace_id AND w.status='ACTIVE')
+                    AND EXISTS(SELECT 1 FROM workspace_members m WHERE m.workspace_id=n.workspace_id AND m.user_id=j.user_id)
+                    AND EXISTS(SELECT 1 FROM users u WHERE u.id=j.user_id AND u.status='ACTIVE')) AS execution_allowed
+                FROM artifact_jobs j JOIN notebooks n ON n.id=j.notebook_id
+                WHERE j.id=? AND n.workspace_id=? FOR UPDATE OF j
                 """,
                         Rows::map,
                         id,

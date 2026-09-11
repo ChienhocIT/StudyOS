@@ -98,8 +98,11 @@ public class SourceController {
 
     @PostMapping("/sources/{id}/retry")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public Map<String, Object> retry(@PathVariable UUID id) {
-        return service.retry(Actor.currentUserId(), id);
+    public Map<String, Object> retry(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Idempotency-Key", required = false) @Size(min = 1, max = 120)
+                    String key) {
+        return service.retry(Actor.currentUserId(), id, key);
     }
 
     @DeleteMapping("/sources/{id}")

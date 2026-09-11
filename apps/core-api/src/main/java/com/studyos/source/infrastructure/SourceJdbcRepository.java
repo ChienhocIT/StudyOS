@@ -1,5 +1,6 @@
 package com.studyos.source.infrastructure;
 
+import com.studyos.shared.persistence.Json;
 import com.studyos.shared.persistence.Rows;
 import com.studyos.source.application.port.SourceRepository;
 import java.util.*;
@@ -115,6 +116,46 @@ public class SourceJdbcRepository implements SourceRepository {
                 .param("failure", failure)
                 .param("detail", detail)
                 .param("retry", retryable)
+                .update();
+    }
+
+    public Optional<Map<String, Object>> retryResponse(UUID user, UUID source, String key) {
+        return db.sql(
+                        "select response_json::text from source_retry_requests where user_id=:u and source_id=:s and idempotency_key=:k")
+                .param("u", user)
+                .param("s", source)
+                .param("k", key)
+                .query(String.class)
+                .optional()
+                .map(Json::object);
+    }
+
+    public void recordRetry(
+            UUID user, UUID source, String key, UUID version, Map<String, Object> response) {
+        db.sql(
+                        "insert into source_retry_requests(user_id,source_id,idempotency_key,source_version_id,response_json) values(:u,:s,:k,:v,cast(:response as jsonb))")
+                .param("u", user)
+                .param("s", source)
+                .param("k", key)
+                .param("v", version)
+                .param("response", Json.write(response))
+                .update();
+    }
+
+    public void newAttempt(UUID source, UUID version) {
+        // Only immutable upload metadata is inherited. Derived parser state belongs to one attempt.
+        int inserted =
+                db.sql(
+                                "insert into source_versions(id,source_id,version_no,object_key,mime_type,size_bytes,checksum_sha256) select :v,s.id,v.version_no+1,v.object_key,v.mime_type,v.size_bytes,v.checksum_sha256 from sources s join source_versions v on v.id=s.current_version_id where s.id=:s and s.status='FAILED' and s.retryable")
+                        .param("v", version)
+                        .param("s", source)
+                        .update();
+        if (inserted != 1)
+            throw new IllegalStateException("Retry requires a locked retryable source");
+        db.sql(
+                        "update sources set current_version_id=:v,status='QUEUED',failure_code=null,failure_message=null,retryable=false,updated_at=now() where id=:s")
+                .param("v", version)
+                .param("s", source)
                 .update();
     }
 

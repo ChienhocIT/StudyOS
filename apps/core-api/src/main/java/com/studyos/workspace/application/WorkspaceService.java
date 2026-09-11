@@ -1,6 +1,7 @@
 package com.studyos.workspace.application;
 
 import com.studyos.shared.web.ApiException;
+import com.studyos.source.application.SourceScopeCleanup;
 import com.studyos.workspace.application.port.WorkspaceRepository;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -9,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WorkspaceService implements WorkspaceAuthorization {
     private final WorkspaceRepository repo;
+    private final SourceScopeCleanup cleanup;
 
-    public WorkspaceService(WorkspaceRepository repo) {
+    public WorkspaceService(WorkspaceRepository repo, SourceScopeCleanup cleanup) {
         this.repo = repo;
+        this.cleanup = cleanup;
     }
 
     public List<Map<String, Object>> list(UUID user) {
@@ -50,6 +53,7 @@ public class WorkspaceService implements WorkspaceAuthorization {
     @Transactional
     public void delete(UUID user, UUID id) {
         requireRole(user, id, "OWNER");
+        cleanup.workspace(id);
         repo.delete(id);
     }
 

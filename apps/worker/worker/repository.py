@@ -65,11 +65,13 @@ async def source_scope(conn, event: Event, *, lock: bool = False) -> dict:
     async with conn.cursor(row_factory=dict_row) as cur:
         await cur.execute(
             """SELECT s.id,s.notebook_id,s.workspace_id,s.type,s.canonical_uri,s.status,
-                            s.current_version_id,v.object_key,v.checksum_sha256,v.mime_type,v.size_bytes
+                            s.current_version_id,v.object_key,v.checksum_sha256,v.mime_type,v.size_bytes,
+                            n.status AS notebook_status,w.status AS workspace_status
                             FROM sources s JOIN source_versions v ON v.source_id=s.id AND v.id=s.current_version_id
                             JOIN notebooks n ON n.id=s.notebook_id AND n.workspace_id=s.workspace_id
-                            WHERE s.id=%s AND s.workspace_id=%s AND v.id=%s AND n.status='ACTIVE'"""
-            + (" FOR SHARE OF s,v,n" if lock else ""),
+                            JOIN workspaces w ON w.id=s.workspace_id
+                            WHERE s.id=%s AND s.workspace_id=%s AND v.id=%s"""
+            + (" FOR SHARE OF s,v,n,w" if lock else ""),
             (source_id, event.workspace_id, version_id),
         )
         row = await cur.fetchone()
@@ -78,6 +80,8 @@ async def source_scope(conn, event: Event, *, lock: bool = False) -> dict:
         row["status"] != "DELETING"
         if deleting
         else row["status"] in {"DELETING", "DELETED", "FAILED"}
+        or row["notebook_status"] != "ACTIVE"
+        or row["workspace_status"] != "ACTIVE"
     ):
         raise PipelineError(
             "SOURCE_STALE_EVENT",

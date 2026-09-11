@@ -1,6 +1,6 @@
 # StudyOS — tiến độ triển khai
 
-Cập nhật: 11/09/2026. Branch: `feat/studyos-implementation`.
+Cập nhật: 12/09/2026. Branch: `feat/studyos-implementation`.
 Thiết kế gốc: `2345ef0`; mốc implementation đầu: `6d03440`.
 Repository Git local đã có lịch sử; chưa cấu hình remote hoặc triển khai production.
 
@@ -8,7 +8,7 @@ Repository Git local đã có lịch sử; chưa cấu hình remote hoặc tri�
 
 | Phần | Đã triển khai | Kiểm chứng hiện tại |
 |---|---|---|
-| Foundation | Monorepo, Compose, migrations V1–V5, scripts, CI, contracts | 4 app images build; full Compose chạy; migration trên DB thật |
+| Foundation | Monorepo, Compose, migrations V1–V7, scripts, CI, contracts | 4 app images build; full Compose chạy; migration trên DB thật |
 | Identity / tenancy | Đăng ký, đăng nhập, refresh rotation/revocation, workspace, notebook | Tenant-negative tests và browser registration |
 | Sources | Raw/URL/upload, immutable upload sealing, state events, download, delete | Raw ingestion thật đến READY; upload/download negative tests |
 | Conversations | WS ticket, replay, history paging, grounded answers, citations, cancel | Chat thật Core→AI→Redis→browser; test upstream ngừng phát dữ liệu |
@@ -23,16 +23,17 @@ Repository Git local đã có lịch sử; chưa cấu hình remote hoặc tri�
 
 | Bộ kiểm tra | Kết quả |
 |---|---|
-| Core `mvn clean verify` | 36 passed, 0 failed, 0 skipped |
+| Core `mvn clean verify` | 57 passed, 0 failed, 0 skipped |
 | Trong Core: architecture | 4 quy tắc được thực thi bằng Jupiter/ArchUnit |
-| Trong Core: integration | 10 Core + 4 Learning trên PostgreSQL/pgvector Testcontainers |
+| Trong Core: integration | 10 Core + 9 Learning + 3 container cleanup + 2 retry trên PostgreSQL/pgvector Testcontainers |
 | AI pytest | 32 passed |
-| Worker pytest | 36 passed |
+| Worker pytest | 43 passed |
 | Web Vitest | 4 passed |
 | Web TypeScript + production build | Passed |
 | Playwright Chromium | 1 workflow passed trên cả dev server và Docker production web: registration → notebook → source → notes → mobile navigation |
 | Smoke xuyên dịch vụ | 10 nhóm kiểm tra passed trên cả native runtime và full Docker Compose; provider `local-extractive` |
 | Docker build | Core, web, AI, worker đều build thành công; Python images dùng `uv.lock` |
+| Cleanup smoke | Xóa notebook/workspace: nguồn DELETED, object MinIO và chunks đã xóa |
 | Contracts | YAML references, JSON schemas, 2 WS example frames và 7 internal operation IDs passed |
 
 Smoke thực hiện trên dịch vụ thật với tài khoản riêng: tenant isolation; ingestion;
@@ -48,8 +49,13 @@ Xem [REVIEW.md](REVIEW.md) để biết từng lỗi và bằng chứng sửa.
 Đợt này sửa CORS, hủy upstream, quota bị treo khi timeout, artifact provenance,
 concept extraction từ Markdown, stale artifacts và outbox retry starvation.
 Một số agent chạm giới hạn sử dụng; coordinator tiếp quản chạy test và tích hợp.
-Java đã được chuẩn hóa bằng Spotless; 36 test chạy lại sau định dạng vẫn đạt.
+Java đã được chuẩn hóa bằng Spotless; toàn bộ 57 test backend đạt.
 Ảnh desktop/mobile được xem lại; Playwright chờ menu đóng và chụp khi hiệu ứng ổn định.
+
+Đợt bảo trì backend 12/09 sửa race phục hồi notebook đã xóa, cleanup theo container,
+fencing retry, quyền của stream đang mở, artifact scope bị thu hồi, validation goal
+và recommendation/analytics còn tính dữ liệu stale. Báo cáo:
+[CORE_REVIEW_2026-09-12.md](CORE_REVIEW_2026-09-12.md).
 
 ## Phần còn lại
 

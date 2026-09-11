@@ -248,11 +248,16 @@ public class PostgresLearningStore implements LearningStore {
                 SELECT n.id AS notebook_id,c.id AS concept_id,c.name,coalesce(m.mastery_score,0) AS mastery_score,
                 coalesce(m.confidence,0) AS confidence,
                 (SELECT count(*) FROM flashcards f JOIN flashcard_decks d ON d.id=f.deck_id
-                  WHERE d.user_id=? AND d.notebook_id=n.id AND coalesce(f.due_at,now())<=now()) AS due_cards,
+                  WHERE d.user_id=? AND d.notebook_id=n.id AND d.status='READY' AND coalesce(f.due_at,now())<=now()) AS due_cards,
                 EXISTS(SELECT 1 FROM learning_goals g WHERE g.user_id=? AND g.workspace_id=n.workspace_id AND g.status='ACTIVE') AS active_goal
                 FROM notebooks n JOIN workspace_members wm ON wm.workspace_id=n.workspace_id AND wm.user_id=?
                 JOIN workspaces w ON w.id=n.workspace_id AND w.status='ACTIVE'
-                LEFT JOIN concepts c ON c.notebook_id=n.id
+                LEFT JOIN concepts c ON c.notebook_id=n.id AND EXISTS (
+                  SELECT 1 FROM chunk_concepts cc JOIN document_chunks dc ON dc.id=cc.chunk_id
+                  JOIN sources s ON s.current_version_id=dc.source_version_id
+                  WHERE cc.concept_id=c.id AND s.status='READY'
+                    AND s.workspace_id=n.workspace_id AND s.notebook_id=n.id
+                    AND dc.workspace_id=n.workspace_id AND dc.notebook_id=n.id)
                 LEFT JOIN user_concept_mastery m ON m.concept_id=c.id AND m.user_id=?
                 WHERE n.status='ACTIVE' ORDER BY coalesce(m.mastery_score,0),n.id,c.id LIMIT 100
                 """,

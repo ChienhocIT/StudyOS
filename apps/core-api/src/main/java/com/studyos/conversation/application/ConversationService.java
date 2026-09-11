@@ -206,10 +206,50 @@ public class ConversationService {
                 history);
     }
 
+    @Transactional
     public boolean active(UUID conversation, UUID request) {
-        return repo.generation(conversation, request, false)
-                .map(g -> "STREAMING".equals(g.get("status")))
-                .orElse(false);
+        var generation = repo.generation(conversation, request, true);
+        if (generation.isEmpty() || !"STREAMING".equals(generation.get().get("status")))
+            return false;
+        return streamScopeValid(
+                Rows.uuid(generation.get(), "userId"), conversation, request, generation.get());
+    }
+
+    @Transactional
+    public boolean canReceive(UUID user, UUID conversation, UUID request) {
+        var generation =
+                request == null
+                        ? Optional.<Map<String, Object>>empty()
+                        : repo.generation(conversation, request, true);
+        // A stale or mismatched session must never terminate somebody else's generation.
+        if (generation.isPresent() && !user.equals(Rows.uuid(generation.get(), "userId")))
+            return false;
+        return streamScopeValid(user, conversation, request, generation.orElse(null));
+    }
+
+    private boolean streamScopeValid(
+            UUID user, UUID conversation, UUID request, Map<String, Object> generation) {
+        try {
+            var row = authorized(user, conversation, false);
+            UUID notebook = Rows.uuid(row, "notebookId");
+            notebooks.requireWrite(user, notebook);
+            if (generation != null
+                    && generation.get("sourceIdsJson") instanceof List<?> selected
+                    && !selected.isEmpty())
+                sources.requireReady(
+                        user,
+                        notebook,
+                        selected.stream().map(id -> UUID.fromString(id.toString())).toList());
+            return true;
+        } catch (ApiException revoked) {
+            // Catch access denial inside the transaction so terminal state and budget release
+            // commit.
+            if (generation != null && "STREAMING".equals(generation.get("status"))) {
+                repo.finish(conversation, request, "", "CANCELLED", null);
+                usage.failed(user, "CHAT", usageKey(conversation, request));
+            }
+            return false;
+        }
     }
 
     @Transactional
@@ -225,7 +265,14 @@ public class ConversationService {
                     List.of(),
                     "groundingStatus",
                     "INSUFFICIENT");
-        authorized(turn.userId(), turn.conversationId(), false);
+        if (!streamScopeValid(turn.userId(), turn.conversationId(), turn.requestId(), generation))
+            return Map.of(
+                    "status",
+                    "CANCELLED",
+                    "citationIds",
+                    List.of(),
+                    "groundingStatus",
+                    "INSUFFICIENT");
         String content = Objects.toString(payload.get("content"), "");
         if (content.length() > 200000)
             throw ApiException.badRequest(

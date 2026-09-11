@@ -54,9 +54,13 @@ class LearningIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
+    @Autowired javax.sql.DataSource dataSource;
     @Autowired StudioService studio;
     @Autowired SourceArtifactInvalidation invalidation;
     @Autowired AiUsagePolicy usage;
+    @Autowired com.studyos.learning.application.LearningService learning;
+    @Autowired com.studyos.analytics.application.AnalyticsQueries analytics;
+    @Autowired com.studyos.notebook.application.port.NotebookRepository notebookRepository;
     @MockitoBean ObjectStorage storage;
     @MockitoBean ChatStream chat;
     @MockitoBean StreamEvents streams;
@@ -70,6 +74,191 @@ class LearningIntegrationTest {
             UUID source,
             UUID chunk,
             UUID concept) {}
+
+    @Test
+    void goalValidationRejectsMalformedChangesBeforeWritingAndSupportsClearing() throws Exception {
+        var f = fixture();
+        var created =
+                call(
+                        "POST",
+                        "/learning/goals",
+                        f.token(),
+                        null,
+                        Map.of(
+                                "workspaceId",
+                                f.workspace(),
+                                "title",
+                                "  Learn databases  ",
+                                "weeklyMinutes",
+                                60,
+                                "targetDate",
+                                "2026-12-31"),
+                        201);
+        String path = "/learning/goals/" + created.get("id");
+        for (String patchBody :
+                List.of(
+                        "{\"status\":null}",
+                        "{\"targetDate\":\"2026-02-30\"}",
+                        "{\"weeklyMinutes\":15.5}",
+                        "{\"weeklyMinutes\":4294967356}",
+                        "{\"description\":{}}",
+                        "{\"title\":\"Changed\",\"unexpected\":true}")) {
+            mvc.perform(
+                            patch("/api/v1" + path)
+                                    .header("Authorization", "Bearer " + f.token())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(patchBody))
+                    .andExpect(status().isBadRequest());
+        }
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT title FROM learning_goals WHERE id=?",
+                                String.class,
+                                UUID.fromString(created.get("id").toString())))
+                .isEqualTo("Learn databases");
+        var clear = new LinkedHashMap<String, Object>();
+        clear.put("weeklyMinutes", null);
+        clear.put("targetDate", null);
+        clear.put("description", null);
+        var changed = call("PATCH", path, f.token(), null, clear, 200);
+        assertThat(changed.get("weeklyMinutes")).isNull();
+        assertThat(changed.get("targetDate")).isNull();
+        call(
+                "POST",
+                "/learning/goals",
+                f.token(),
+                null,
+                Map.of("workspaceId", f.workspace(), "title", "Goal", "targetDate", "invalid"),
+                400);
+        call(
+                "POST",
+                "/learning/goals",
+                f.token(),
+                null,
+                Map.of("workspaceId", f.workspace(), "title", "Goal", "weeklyMinutes", 15.5),
+                400);
+    }
+
+    @Test
+    void recommendationsExcludeWithdrawnConceptEvidenceAndStaleDecks() throws Exception {
+        var f = fixture();
+        generated(f, "FLASHCARDS");
+        assertThat(learning.recommendations(f.user())).isNotEmpty();
+        invalidation.invalidate(f.workspace(), f.notebook(), f.source());
+        jdbc.update("UPDATE sources SET status='DELETING' WHERE id=?", f.source());
+        assertThat(learning.recommendations(f.user())).isEmpty();
+        assertThat(
+                        ((Number) analytics.overview(f.user(), f.notebook()).get("dueCards"))
+                                .longValue())
+                .isZero();
+    }
+
+    @Test
+    void archivedNotebookTerminatesPendingArtifactAndUsageOnResultArrival() throws Exception {
+        var f = fixture();
+        var job =
+                studio.generate(
+                        f.user(),
+                        f.notebook(),
+                        "QUIZ",
+                        UUID.randomUUID().toString(),
+                        List.of(f.source()),
+                        Map.of("count", 1));
+        UUID id = UUID.fromString(job.get("id").toString());
+        jdbc.update("UPDATE notebooks SET status='ARCHIVED' WHERE id=?", f.notebook());
+        var event =
+                Map.<String, Object>of(
+                        "eventId",
+                        UUID.randomUUID(),
+                        "eventVersion",
+                        1,
+                        "workspaceId",
+                        f.workspace(),
+                        "eventType",
+                        "quiz.generated.v1",
+                        "payload",
+                        Map.of(
+                                "artifactJobId",
+                                id,
+                                "notebookId",
+                                f.notebook(),
+                                "userId",
+                                f.user(),
+                                "artifactType",
+                                "QUIZ"));
+        studio.acceptEvent(event);
+        studio.acceptEvent(event);
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT error_code FROM artifact_jobs WHERE id=?",
+                                String.class,
+                                id))
+                .isEqualTo("ARTIFACT_SCOPE_REVOKED");
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT status FROM ai_usage_reservations WHERE request_key=?",
+                                String.class,
+                                id.toString()))
+                .isEqualTo("FAILED");
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM quizzes WHERE artifact_job_id=?",
+                                Long.class,
+                                id))
+                .isZero();
+    }
+
+    @Test
+    void staleNotebookUpdateCannotResurrectDeletedNotebook() throws Exception {
+        var f = fixture();
+        assertThat(notebookRepository.get(f.notebook())).isPresent();
+        notebookRepository.delete(f.notebook());
+        assertThatThrownBy(
+                        () ->
+                                notebookRepository.update(
+                                        f.notebook(), "Resurrect", null, null, "ACTIVE"))
+                .isInstanceOf(ApiException.class);
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT status::text FROM notebooks WHERE id=?",
+                                String.class,
+                                f.notebook()))
+                .isEqualTo("DELETED");
+    }
+
+    @Test
+    void malformedOptionalTelemetryDoesNotLoseCompletedBusinessUsage() throws Exception {
+        var f = fixture();
+        String key = UUID.randomUUID().toString();
+        usage.reserve(f.user(), f.workspace(), "LANGUAGE", key);
+        usage.complete(
+                f.user(),
+                "LANGUAGE",
+                key,
+                Map.of(
+                        "model",
+                        "provider",
+                        "inputTokens",
+                        1.5,
+                        "outputTokens",
+                        -2,
+                        "estimatedCostUsd",
+                        "not-a-price"),
+                "x".repeat(100));
+        var run =
+                jdbc.queryForMap(
+                        "SELECT input_tokens,output_tokens,estimated_cost_usd,metadata_json FROM ai_runs WHERE user_id=?",
+                        f.user());
+        assertThat(run.get("input_tokens")).isNull();
+        assertThat(run.get("output_tokens")).isNull();
+        assertThat(run.get("estimated_cost_usd")).isNull();
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT status FROM ai_usage_reservations WHERE request_key=?",
+                                String.class,
+                                key))
+                .isEqualTo("COMPLETED");
+    }
 
     @Test
     void failedOutboxDeliveryBacksOffWithoutBlockingOtherEvents() {
@@ -108,11 +297,10 @@ class LearningIntegrationTest {
         var transaction =
                 new org.springframework.transaction.support.TransactionTemplate(
                         new org.springframework.jdbc.datasource.DataSourceTransactionManager(
-                                jdbc.getDataSource()));
+                                dataSource));
         var relay =
                 new com.studyos.shared.outbox.OutboxRelay(
-                        org.springframework.jdbc.core.simple.JdbcClient.create(
-                                jdbc.getDataSource()),
+                        org.springframework.jdbc.core.simple.JdbcClient.create(dataSource),
                         rabbit,
                         transaction);
         relay.relay();
@@ -205,6 +393,7 @@ class LearningIntegrationTest {
             throws Exception {
         var request =
                 switch (method) {
+                    case "PATCH" -> patch("/api/v1" + path);
                     case "GET" -> get("/api/v1" + path);
                     default -> post("/api/v1" + path);
                 };

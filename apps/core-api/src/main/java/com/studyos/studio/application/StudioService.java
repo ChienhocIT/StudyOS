@@ -156,6 +156,11 @@ public class StudioService {
                     "ARTIFACT_SCOPE_INVALID", "Artifact context does not match its job.");
         if (!store.claimEvent(eventId)
                 || Set.of("SUCCEEDED", "FAILED", "CANCELLED").contains(job.get("status"))) return;
+        if (!Boolean.TRUE.equals(job.get("executionAllowed"))) {
+            store.failJob(id, "ARTIFACT_SCOPE_REVOKED");
+            usage.failed(Rows.uuid(job, "userId"), "ARTIFACT", id.toString());
+            return;
+        }
         String eventType = Objects.toString(event.get("eventType"));
         if (eventType.equals("artifact.generation.failed.v1")) {
             String code = Objects.toString(payload.get("errorCode"), "ARTIFACT_GENERATION_FAILED");

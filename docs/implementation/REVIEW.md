@@ -1,5 +1,7 @@
 # Implementation review
 
+Latest backend maintenance review: [12/09/2026 findings and fixes](CORE_REVIEW_2026-09-12.md).
+
 Baseline: `2345ef0`. Scope: Phase 0 design, initial implementation commit `6d03440`,
 and subsequent integration fixes. Review was delegated independently for standards
 and specification, followed by targeted re-review of backend correctness.

@@ -286,35 +286,60 @@ public class SourceService implements SourceLookup {
 
     @Transactional
     public Map<String, Object> retry(UUID user, UUID id) {
+        return retry(user, id, null);
+    }
+
+    @Transactional
+    public Map<String, Object> retry(UUID user, UUID id, String key) {
         var row = authorized(user, id, true);
+        // The source row lock serializes attempt creation and retry-key lookup in this transaction.
+        if (key != null) {
+            if (key.isBlank() || key.length() > 120)
+                throw ApiException.badRequest(
+                        "INVALID_IDEMPOTENCY_KEY", "Use a nonblank key of at most 120 characters.");
+            var replay = repo.retryResponse(user, id, key);
+            if (replay.isPresent()) return replay.get();
+        }
         if (!"FAILED".equals(row.get("status")) || !Boolean.TRUE.equals(row.get("retryable")))
             throw ApiException.conflict(
                     "SOURCE_NOT_RETRYABLE", "This source cannot currently be retried.");
-        repo.status(id, "QUEUED", null, null, false);
+        UUID version = UUID.randomUUID();
+        repo.newAttempt(id, version);
         row = repo.get(id, false).orElseThrow();
         enqueue(row);
-        return visible(row);
+        var response = visible(row);
+        // Persist the public ISO timestamp representation, independent of internal JSON defaults.
+        response.replaceAll(
+                (field, value) ->
+                        value instanceof java.time.temporal.TemporalAccessor
+                                ? value.toString()
+                                : value);
+        if (key != null) repo.recordRetry(user, id, key, version, response);
+        return response;
     }
 
     @Transactional
     public void delete(UUID user, UUID id) {
-        var row = authorized(user, id, true);
+        var row =
+                repo.get(id, true)
+                        .orElseThrow(
+                                () ->
+                                        ApiException.notFound(
+                                                "SOURCE_NOT_FOUND", "Source not found."));
+        UUID notebook = Rows.uuid(row, "notebookId");
+        // A repeated delete remains authorized even after the source is no longer visible.
+        notebooks.requireRead(user, notebook);
+        if (Set.of("DELETING", "DELETED").contains(row.get("status").toString())) return;
+        notebooks.requireWrite(user, notebook);
         artifacts.invalidate(Rows.uuid(row, "workspaceId"), Rows.uuid(row, "notebookId"), id);
         repo.status(id, "DELETING", null, null, false);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sourceId", id);
+        payload.put("sourceVersionId", row.get("currentVersionId"));
+        payload.put("notebookId", notebook);
+        payload.put("objectKey", row.get("objectKey"));
         outbox.publish(
-                Rows.uuid(row, "workspaceId"),
-                "Source",
-                id,
-                "source.delete.requested.v1",
-                Map.of(
-                        "sourceId",
-                        id,
-                        "sourceVersionId",
-                        row.get("currentVersionId"),
-                        "notebookId",
-                        row.get("notebookId"),
-                        "objectKey",
-                        row.get("objectKey")));
+                Rows.uuid(row, "workspaceId"), "Source", id, "source.delete.requested.v1", payload);
     }
 
     public List<Map<String, Object>> transcript(UUID user, UUID id) {

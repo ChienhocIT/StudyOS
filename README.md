@@ -97,6 +97,7 @@ Khi các dịch vụ local đang chạy:
 
 ```powershell
 python scripts/configure_runtime.py uv run --project apps/ai-service python tests/e2e/local_smoke.py
+python scripts/configure_runtime.py uv run --project apps/ai-service python tests/e2e/cleanup_smoke.py
 npm --prefix apps/web exec -- playwright install chromium
 npm --prefix apps/web run test:e2e
 ```

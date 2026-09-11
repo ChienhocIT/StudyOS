@@ -29,6 +29,13 @@ public interface SourceRepository {
 
     void queued(UUID sourceId, String checksum, long size, String objectKey);
 
+    Optional<Map<String, Object>> retryResponse(UUID user, UUID source, String key);
+
+    void recordRetry(
+            UUID user, UUID source, String key, UUID version, Map<String, Object> response);
+
+    void newAttempt(UUID source, UUID version);
+
     void status(UUID id, String status, String failure, String detail, boolean retryable);
 
     List<UUID> ready(UUID notebook);
