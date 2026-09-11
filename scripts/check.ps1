@@ -13,5 +13,5 @@ npm --prefix apps/web test
 if ($LASTEXITCODE -ne 0) { throw 'Web tests failed.' }
 npm --prefix apps/web run build
 if ($LASTEXITCODE -ne 0) { throw 'Web production build failed.' }
-python scripts/validate_contracts.py --require-internal
+uv run --with pyyaml --with jsonschema python scripts/validate_contracts.py --require-internal
 if ($LASTEXITCODE -ne 0) { throw 'Contract validation failed.' }

@@ -35,6 +35,7 @@ class Prepared:
     chunks: list[dict] | None = None
     vectors: list[list[float]] | None = None
     segments: list | None = None
+    normalized_data: bytes | None = None
 
 
 class Pipeline:
@@ -148,11 +149,7 @@ class Pipeline:
                     parse_source, data, source["type"], self.settings.max_pdf_pages
                 )
             key = self.normalized_key(event)
-            await asyncio.to_thread(
-                self.storage.write,
-                key,
-                json.dumps(normalized_payload(sections), ensure_ascii=False).encode(),
-            )
+            normalized_data = json.dumps(normalized_payload(sections), ensure_ascii=False).encode()
             facts = [
                 event.fact(
                     "source.parsed.v1",
@@ -175,7 +172,7 @@ class Pipeline:
                         },
                     )
                 )
-            return Prepared(facts=facts, sections=sections, segments=segments)
+            return Prepared(facts=facts, sections=sections, segments=segments, normalized_data=normalized_data)
         if event.event_type == "source.parsed.v1":
             key = self.normalized_key(event)
             if payload.get("normalizedObjectKey") != key:
@@ -315,6 +312,9 @@ class Pipeline:
         self, conn, event: Event, scope: dict, prepared: Prepared
     ):
         version_id = UUID(event.payload["sourceVersionId"])
+        if prepared.normalized_data is not None:
+            # The shared source lock prevents deletion from racing a late object write.
+            await asyncio.to_thread(self.storage.write, self.normalized_key(event), prepared.normalized_data)
         if event.event_type == "source.delete.requested.v1":
             params = (event.workspace_id, scope["notebook_id"], scope["id"])
             predicate = "workspace_id=%s AND notebook_id=%s AND source_version_id IN (SELECT id FROM source_versions WHERE source_id=%s)"

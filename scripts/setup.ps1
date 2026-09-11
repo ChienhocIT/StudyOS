@@ -16,4 +16,4 @@ if (-not (Test-Path -LiteralPath $envPath)) {
 } else {
     Write-Host 'Existing .env preserved.'
 }
-Write-Host 'Run docker compose up -d --wait to start local infrastructure.'
+Write-Host 'Run docker compose up -d --wait postgres redis rabbitmq minio, then docker compose run --rm minio-init.'

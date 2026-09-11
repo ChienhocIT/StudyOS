@@ -1,0 +1,48 @@
+import { expect, test } from "@playwright/test";
+
+/** Real Core API smoke: no fake authenticated session or intercepted business responses. */
+test("register, notebook, source, notes and responsive navigation", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Tạo tài khoản", exact: true }).click();
+  await page.getByLabel("Tên hiển thị").fill("Kiểm thử giao diện");
+  await page.getByLabel("Email", { exact: true }).fill(`web-smoke-${Date.now()}@studyos.test`);
+  await page.getByLabel("Mật khẩu", { exact: true }).fill("StudyOS-test-2026!");
+  await page.getByRole("button", { name: "Tạo tài khoản", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Sổ tay của tôi." })).toBeVisible();
+  await page.getByRole("button", { name: "Tạo sổ tay", exact: true }).click();
+  await page.getByLabel("Tên sổ tay", { exact: true }).fill("Kiến trúc phần mềm — kiểm thử UI");
+  await page.getByLabel("Mô tả", { exact: true }).fill("Tài liệu và ghi chú cho kiểm thử giao diện thực tế.");
+  await page.getByLabel("Mục tiêu học tập", { exact: true }).fill("Hiểu trách nhiệm của từng thành phần hệ thống.");
+  await page.getByRole("button", { name: "Tạo mới", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Kiến trúc phần mềm — kiểm thử UI" })).toBeVisible();
+  await page.getByRole("button", { name: "Thêm tài liệu", exact: true }).click();
+  await page.getByLabel("Tên tài liệu", { exact: true }).fill("Ghi chép kiến trúc");
+  await page.getByLabel("Nội dung", { exact: true }).fill("Kiến trúc hướng sự kiện cho phép các dịch vụ giao tiếp qua sự kiện. Producer phát sự kiện vào message broker. Consumer nhận và xử lý sự kiện độc lập. Transactional outbox giúp bảo đảm thay đổi cơ sở dữ liệu và sự kiện được ghi nhận cùng giao dịch. Idempotency giúp xử lý sự kiện lặp lại mà không tạo tác dụng phụ trùng lặp.");
+  await page.getByRole("dialog").getByRole("button", { name: "Thêm tài liệu", exact: true }).click();
+  await expect(page.locator(".source-details").filter({ hasText: "Ghi chép kiến trúc" })).toBeVisible();
+  await page.getByRole("tab", { name: "Ghi chú", exact: true }).click();
+  await page.getByRole("button", { name: "Ghi chú mới", exact: true }).click();
+  await page.getByLabel("Tiêu đề", { exact: true }).fill("Điểm cần ghi nhớ");
+  await page.locator('textarea[name="content"]').fill("## Sự kiện\nMỗi consumer cần xử lý idempotent.");
+  await page.getByRole("button", { name: "Lưu ghi chú", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Điểm cần ghi nhớ" })).toBeVisible();
+  await page.screenshot({ path: "test-results/desktop-notes.png", fullPage: true, animations: "disabled" });
+  await page.getByRole("tab", { name: "Hỏi tài liệu", exact: true }).click();
+  await page.screenshot({ path: "test-results/desktop-chat.png", fullPage: true, animations: "disabled" });
+  await expect(page.locator("body")).toHaveJSProperty("scrollWidth", await page.locator("body").evaluate(el => el.clientWidth));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "test-results/mobile-chat.png", fullPage: true, animations: "disabled" });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole("button", { name: /Tài liệu nguồn \(/ }).click();
+  await expect(page.getByRole("button", { name: "Thêm tài liệu", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Đóng tài liệu", exact: true }).click();
+  await page.getByRole("button", { name: "Mở menu", exact: true }).click();
+  await page.getByRole("button", { name: "Tiến độ học tập", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tiến độ học tập", exact: true })).toBeVisible();
+  await expect(page.locator(".app-shell")).not.toHaveClass(/sidebar-open/);
+  await expect(page.locator(".sidebar-backdrop")).toHaveCount(0);
+  await page.screenshot({ path: "test-results/mobile-analytics.png", fullPage: true, animations: "disabled" });
+  expect(errors).toEqual([]);
+});

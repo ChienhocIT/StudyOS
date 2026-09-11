@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
   redis:
     image: redis:7.4-alpine
-    ports: ["127.0.0.1:6379:6379"]
+    ports: ["127.0.0.1:${REDIS_PORT:-6379}:6379"]
     command: ["redis-server", "--appendonly", "yes"]
     volumes: ["redis-data:/data"]
     healthcheck:
@@ -61,8 +61,9 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       S3_BUCKET: ${S3_BUCKET:-studyos-sources}
     entrypoint: ["/bin/sh", "-ec"]
+    volumes: ["./infrastructure/minio/lifecycle.json:/etc/studyos/lifecycle.json:ro"]
     command:
-      - 'mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" >/dev/null; mc mb --ignore-existing "local/$${S3_BUCKET}"; mc anonymous set none "local/$${S3_BUCKET}"'
+      - 'mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" >/dev/null; mc mb --ignore-existing "local/$${S3_BUCKET}"; mc anonymous set none "local/$${S3_BUCKET}"; mc ilm import "local/$${S3_BUCKET}" < /etc/studyos/lifecycle.json'
   core-api:
     profiles: [app]
     build:

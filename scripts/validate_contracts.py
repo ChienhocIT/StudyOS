@@ -51,7 +51,9 @@ def main():
                       for operation in item.values() if isinstance(operation, dict) and "operationId" in operation]
         if len(operations) != len(set(operations)):
             raise ValueError(f"Duplicate operationId in {path.name}")
-        print(f"PASS {path.name}: references and {len(operations)} unique operations")
+        endpoint_count = sum(1 for item in document.get("paths", {}).values()
+                             for method in item if method.lower() in {"get", "post", "put", "patch", "delete", "options", "head"})
+        print(f"PASS {path.name}: references, {endpoint_count} HTTP operations, {len(operations)} unique operation IDs")
     for name in ("event-envelope.schema.json", "websocket-protocol.schema.json"):
         schema = json.loads((ROOT / name).read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(schema)

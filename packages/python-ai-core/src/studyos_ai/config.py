@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,6 +20,8 @@ class Settings(BaseSettings):
     model_provider_api_key: SecretStr = SecretStr("")
     model_provider_base_url: str = "https://api.openai.com/v1"
     model_name: str = "gpt-4.1-mini"
+    model_input_usd_per_million: Decimal | None = Field(default=None, ge=0, allow_inf_nan=False)
+    model_output_usd_per_million: Decimal | None = Field(default=None, ge=0, allow_inf_nan=False)
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
     context_token_budget: int = Field(default=5000, ge=128, le=24000)

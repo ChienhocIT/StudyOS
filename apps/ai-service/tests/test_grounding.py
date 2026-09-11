@@ -106,6 +106,23 @@ async def test_artifact_is_derived_from_actual_evidence_and_rejects_cross_source
         validate_artifact(result["artifact"], "QUIZ", evidence)
 
 
+async def test_study_guide_resolves_citation_keys_to_trusted_source_refs():
+    evidence = build_context([chunk()], 500)
+    result = await generate_artifact("STUDY_GUIDE", {}, evidence, LocalExtractiveProvider())
+    assert result["artifact"]["sourceRefs"] == [
+        {"key": "C1", "chunkId": evidence[0].chunk.id, "sourceId": evidence[0].chunk.source_id}
+    ]
+    result["artifact"]["sourceRefs"] = [{"chunkId": str(uuid4())}]
+    validated = validate_artifact(result["artifact"], "STUDY_GUIDE", evidence)
+    assert validated["sourceRefs"][0]["chunkId"] == evidence[0].chunk.id
+
+
+@pytest.mark.parametrize("content", ["Uncited guide", "Wrong [C99]", "Mixed [C1] [C0]"])
+def test_study_guide_rejects_unresolved_citations(content):
+    with pytest.raises(PipelineError, match="ARTIFACT_PROVENANCE_INVALID"):
+        validate_artifact({"title": "Guide", "content": content}, "STUDY_GUIDE", build_context([chunk()], 500))
+
+
 async def test_provider_http_adapter_retries_transient_and_validates_dimensions():
     settings = Settings(
         _env_file=None,

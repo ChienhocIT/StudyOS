@@ -179,13 +179,16 @@ def concept_candidates(chunks: list[dict]) -> list[dict]:
     for chunk in chunks:
         heading = chunk.get("metadata", {}).get("heading", "").strip()
         names = [heading] if 3 <= len(heading) <= 120 else []
-        match = re.match(
-            r"^([\w\s-]{3,80}?)\s+(?:is|are|means|refers to|là|được định nghĩa là)\s+",
-            chunk["text"],
-            re.IGNORECASE,
-        )
-        if match:
-            names.append(match.group(1).strip())
+        for line in chunk["text"].splitlines():
+            explicit_heading = re.match(r"^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$", line)
+            if explicit_heading and 3 <= len(explicit_heading.group(1)) <= 120:
+                names.append(explicit_heading.group(1))
+            match = re.match(
+                r"^([\w \t-]{3,80}?)\s+(?:is|are|means|refers to|là|được định nghĩa là)\s+",
+                line.strip(), re.IGNORECASE,
+            )
+            if match:
+                names.append(match.group(1).strip())
         for name in names:
             normalized = unicodedata.normalize("NFC", name).casefold()
             if normalized not in found:
@@ -195,5 +198,7 @@ def concept_candidates(chunks: list[dict]) -> list[dict]:
                     "chunkIds": [],
                     "confidence": 0.65,
                 }
-            found[normalized]["chunkIds"].append(str(chunk["id"]))
+            chunk_id = str(chunk["id"])
+            if chunk_id not in found[normalized]["chunkIds"]:
+                found[normalized]["chunkIds"].append(chunk_id)
     return list(found.values())[:30]

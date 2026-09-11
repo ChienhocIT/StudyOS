@@ -1,5 +1,6 @@
 import type { components } from "./schema";
-export type Entity<K extends keyof components["schemas"]> = components["schemas"][K];
+export type Entity<K extends keyof components["schemas"]> =
+  components["schemas"][K];
 export type User = Entity<"User">;
 export type Tokens = Entity<"TokenPair">;
 export type Workspace = Entity<"Workspace">;
@@ -10,7 +11,7 @@ export type Citation = Entity<"Citation">;
 export type Conversation = Entity<"Conversation">;
 export type Note = Entity<"Note">;
 export type Concept = Entity<"Concept">;
-export type Job = Entity<"Job">;
+export type Job = Entity<"Job"> & { result?: { title?: string; content?: string } };
 export type Quiz = Entity<"Quiz">;
 export type QuizQuestion = Entity<"QuizQuestion">;
 export type QuizAttempt = Entity<"QuizAttempt">;

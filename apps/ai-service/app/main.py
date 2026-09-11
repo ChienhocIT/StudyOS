@@ -1,13 +1,14 @@
 import asyncio
 import json
 import logging
-from contextlib import asynccontextmanager
+from contextlib import aclosing, asynccontextmanager, suppress
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from psycopg_pool import AsyncConnectionPool
+from psycopg import Error as DatabaseError
+from psycopg_pool import AsyncConnectionPool, PoolTimeout
 from studyos_ai.config import Settings
 from studyos_ai.contracts import (
     ArtifactRequest,
@@ -16,7 +17,7 @@ from studyos_ai.contracts import (
     RetrievalRequest,
 )
 from studyos_ai.errors import PipelineError
-from studyos_ai.generation import analyze_language, generate_answer, generate_artifact
+from studyos_ai.generation import analyze_language, generate_artifact, stream_answer
 from studyos_ai.providers import build_provider
 from studyos_ai.retrieval import (
     RETRIEVAL_VERSION,
@@ -26,6 +27,29 @@ from studyos_ai.retrieval import (
 )
 from studyos_ai.security import validate_internal_token
 from studyos_ai.telemetry import operation
+
+from .middleware import BoundedBodyMiddleware
+
+
+async def until_disconnected(iterator, request):
+    """Cancel a blocked upstream read promptly when Core cancels/closes its connection."""
+    async with aclosing(iterator):
+        while True:
+            pending = asyncio.create_task(anext(iterator))
+            try:
+                while not pending.done():
+                    await asyncio.wait({pending}, timeout=0.2)
+                    if not pending.done() and await request.is_disconnected():
+                        return
+                try:
+                    yield pending.result()
+                except StopAsyncIteration:
+                    return
+            finally:
+                if not pending.done():
+                    pending.cancel()
+                    with suppress(asyncio.CancelledError):
+                        await pending
 
 
 def create_app(
@@ -65,6 +89,7 @@ def create_app(
         redoc_url=None,
         openapi_url=None,
     )
+    application.add_middleware(BoundedBodyMiddleware)
 
     @application.exception_handler(PipelineError)
     async def pipeline_error(request, exc):
@@ -96,28 +121,13 @@ def create_app(
             },
         )
 
-    @application.middleware("http")
-    async def request_limits(request: Request, call_next):
-        if request.method == "POST":
-            length = request.headers.get("content-length", "")
-            if length and (not length.isdigit() or int(length) > 300000):
-                return JSONResponse(
-                    status_code=413, content={"code": "REQUEST_TOO_LARGE"}
-                )
-        try:
-            return await call_next(request)
-        except Exception:
-            logging.getLogger("studyos.ai").error(
-                '{"service":"studyos-ai","status":"internal_error"}'
-            )
-            return JSONResponse(
-                status_code=503,
-                content={
-                    "code": "AI_SERVICE_UNAVAILABLE",
-                    "message": "AI service is temporarily unavailable.",
-                    "retryable": True,
-                },
-            )
+    @application.exception_handler(Exception)
+    async def unexpected_error(request, exc):
+        logging.getLogger("studyos.ai").error(
+            '{"service":"studyos-ai","status":"internal_error"}'
+        )
+        return JSONResponse(status_code=503, content={"code": "AI_SERVICE_UNAVAILABLE",
+                            "message": "AI service is temporarily unavailable.", "retryable": True})
 
     def authorize(request: Request, context, permission):
         header = request.headers.get("authorization", "")
@@ -139,7 +149,7 @@ def create_app(
             try:
                 async with request.app.state.pool.connection() as conn:
                     await conn.execute("SELECT 1 FROM document_chunks LIMIT 0")
-            except Exception:
+            except (DatabaseError, PoolTimeout):
                 return JSONResponse(
                     status_code=503,
                     content={"status": "DOWN", "database": "unavailable"},
@@ -165,7 +175,7 @@ def create_app(
         authorize(request, body.context, "chat:generate")
         state = request.app.state
 
-        async def events():
+        async def compute_events():
             def event(kind, payload):
                 return (
                     json.dumps({"type": kind, "payload": payload}, ensure_ascii=False)
@@ -189,17 +199,9 @@ def create_app(
                         evidence = build_context(
                             chunks, state.settings.context_token_budget
                         )
-                        answer = await generate_answer(body, evidence, state.provider)
-                        # Validate the whole candidate before any content reaches Core/browser.
-                        for index in range(0, len(answer.content), 96):
-                            if await request.is_disconnected():
-                                return
-                            yield event(
-                                "assistant.delta",
-                                {"delta": answer.content[index : index + 96]},
-                            )
-                            await asyncio.sleep(0)
-                        yield event("assistant.completed", answer.payload())
+                        async with aclosing(stream_answer(body, evidence, state.provider)) as answer_events:
+                            async for item in answer_events:
+                                yield event(item["type"], item["payload"])
             except PipelineError as exc:
                 yield event(
                     "assistant.failed",
@@ -209,7 +211,7 @@ def create_app(
                         "retryable": exc.retryable,
                     },
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001 -- Private stream boundary must emit a safe terminal frame.
                 yield event(
                     "assistant.failed",
                     {
@@ -220,7 +222,7 @@ def create_app(
                 )
 
         return StreamingResponse(
-            events(),
+            until_disconnected(compute_events(), request),
             media_type="application/x-ndjson",
             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
         )

@@ -1,5 +1,6 @@
 import json
 import re
+from contextlib import aclosing
 from dataclasses import dataclass
 
 from pydantic import ValidationError
@@ -56,12 +57,61 @@ def validate_citations(
     return cleaned, status, supported
 
 
+class StreamingCitationFilter:
+    """Holds incomplete references so a split unknown [C999] never reaches the client."""
+    def __init__(self, evidence: list[Evidence]):
+        self.allowed = {item.key for item in evidence}
+        self.pending = ""
+
+    def feed(self, delta: str, *, final: bool = False) -> str:
+        self.pending += delta
+        cut = len(self.pending)
+        opening = self.pending.rfind("[")
+        if not final and opening > self.pending.rfind("]"):
+            cut = opening
+        ready, self.pending = self.pending[:cut], self.pending[cut:]
+        return CITATION.sub(lambda match: match.group(0) if match.group(1) in self.allowed else "", ready)
+
+
+async def stream_answer(request: ChatRequest, evidence: list[Evidence], provider: ModelProvider):
+    if isinstance(provider, LocalExtractiveProvider) or not evidence:
+        answer = await generate_answer(request, evidence, provider)
+        # Extractive computation has no token provider; emit its result as one honest delta.
+        yield {"type": "assistant.delta", "payload": {"delta": answer.content, "provisional": False}}
+        yield {"type": "assistant.completed", "payload": answer.payload()}
+        return
+    messages = chat_messages(request.content, evidence, request.mode,
+                             [m.model_dump() for m in request.history], request.learner_state)
+    raw = ""
+    usage = {"model": provider.model, "inputTokens": None, "outputTokens": None, "tokenUsageKind": "unavailable"}
+    sanitizer = StreamingCitationFilter(evidence)
+    async with aclosing(provider.stream(messages)) as upstream:
+        async for part in upstream:
+            if "usage" in part:
+                usage = part["usage"]
+            if "delta" in part:
+                raw += part["delta"]
+                safe = sanitizer.feed(part["delta"])
+                if safe:
+                    yield {"type": "assistant.delta", "payload": {"delta": safe, "provisional": True}}
+    if not raw.strip():
+        raise PipelineError("AI_OUTPUT_INVALID", "AI provider returned an empty answer.")
+    trailing = sanitizer.feed("", final=True)
+    if trailing:
+        yield {"type": "assistant.delta", "payload": {"delta": trailing, "provisional": True}}
+    content, status, citations = validate_citations(raw, evidence)
+    if status == "SUPPORTED":
+        status = "PARTIAL"  # Citations identify provenance; semantic entailment is uncalibrated.
+    answer = GroundedAnswer(content, status, citations, usage)
+    yield {"type": "assistant.completed", "payload": answer.payload()}
+
+
 async def generate_answer(
     request: ChatRequest, evidence: list[Evidence], provider: ModelProvider
 ) -> GroundedAnswer:
     if not evidence:
         return GroundedAnswer(
-            "ChÆ°a cÃ³ Ä‘á»§ báº±ng chá»©ng trong cÃ¡c nguá»“n Ä‘Ã£ chá»n Ä‘á»ƒ tráº£ lá»i cÃ¢u há»i nÃ y.",
+            "Chưa có đủ bằng chứng trong các nguồn đã chọn để trả lời câu hỏi này.",
             "INSUFFICIENT",
             [],
             {"model": provider.model, "inputTokens": 0, "outputTokens": 0},
@@ -86,16 +136,16 @@ async def generate_answer(
         selected = candidates[:3]
         if not selected:
             return GroundedAnswer(
-                "KhÃ´ng tÃ¬m tháº¥y Ä‘oáº¡n nguá»“n Ä‘á»§ liÃªn quan. HÃ£y chá»n thÃªm nguá»“n hoáº·c lÃ m rÃµ cÃ¢u há»i.",
+                "Không tìm thấy đoạn nguồn đủ liên quan. Hãy chọn thêm nguồn hoặc làm rõ câu hỏi.",
                 "INSUFFICIENT",
                 [],
                 {"model": provider.model, "inputTokens": 0, "outputTokens": 0},
             )
-        prefix = "Cháº¿ Ä‘á»™ trÃ­ch dáº«n cá»¥c bá»™ â€” cÃ¡c Ä‘oáº¡n liÃªn quan trong nguá»“n:\n\n"
+        prefix = "Chế độ trích dẫn cục bộ — các đoạn liên quan trong nguồn:\n\n"
         if request.mode in {"SOCRATIC", "EXAM"}:
-            prefix = "Dá»±a vÃ o Ä‘oáº¡n trÃ­ch sau, báº¡n giáº£i thÃ­ch Ã½ chÃ­nh báº±ng lá»i cá»§a mÃ¬nh nhÆ° tháº¿ nÃ o?\n\n"
+            prefix = "Dựa vào đoạn trích sau, bạn giải thích ý chính bằng lời của mình như thế nào?\n\n"
         elif request.mode == "FEYNMAN":
-            prefix = "Cháº¿ Ä‘á»™ cá»¥c bá»™ chá»‰ cung cáº¥p Ä‘oáº¡n Ä‘á»‘i chiáº¿u; Ä‘Ã¡nh giÃ¡ giáº£i thÃ­ch cáº§n cáº¥u hÃ¬nh mÃ´ hÃ¬nh AI.\n\n"
+            prefix = "Chế độ cục bộ chỉ cung cấp đoạn đối chiếu; đánh giá giải thích cần cấu hình mô hình AI.\n\n"
         content = prefix + "\n\n".join(
             f"> {re.sub(CITATION, '', s)} [{key}]" for _, _, key, s in selected
         )
@@ -103,6 +153,7 @@ async def generate_answer(
             "model": provider.model,
             "inputTokens": token_estimate(request.content),
             "outputTokens": token_estimate(content),
+            "tokenUsageKind": "estimated",
         }
     else:
         content, usage = await provider.generate(
@@ -207,11 +258,23 @@ def validate_artifact(artifact: dict, kind: str, evidence: list[Evidence]) -> di
                     "ARTIFACT_PROVENANCE_INVALID",
                     "Card lacks valid content or source evidence.",
                 )
-    elif (
-        not isinstance(artifact.get("content"), str)
-        or not 1 <= len(artifact["content"]) <= 40000
-    ):
-        raise PipelineError("ARTIFACT_OUTPUT_INVALID", "Invalid study guide content.")
+    elif kind == "STUDY_GUIDE":
+        content = artifact.get("content")
+        if not isinstance(content, str) or not 1 <= len(content) <= 40000:
+            raise PipelineError("ARTIFACT_OUTPUT_INVALID", "Invalid study guide content.")
+        cited_keys = list(dict.fromkeys(CITATION.findall(content)))
+        by_key = {item.key: item for item in evidence}
+        if not 1 <= len(cited_keys) <= 20 or any(key not in by_key for key in cited_keys):
+            raise PipelineError(
+                "ARTIFACT_PROVENANCE_INVALID", "Study guide references unsupported source evidence."
+            )
+        # Resolve keys from retrieved evidence, never trust model-provided identifiers.
+        artifact["sourceRefs"] = [
+            {"key": key, "chunkId": by_key[key].chunk.id, "sourceId": by_key[key].chunk.source_id}
+            for key in cited_keys
+        ]
+    else:
+        raise PipelineError("ARTIFACT_OUTPUT_INVALID", "Unsupported artifact type.")
     if len(json.dumps(artifact).encode()) > 180000:
         raise PipelineError(
             "ARTIFACT_OUTPUT_INVALID", "Generated artifact exceeds event size limit."
@@ -228,6 +291,8 @@ async def generate_artifact(
             "Select at least one ready source with usable evidence.",
         )
     count = _count(options)
+    usage = {"model": provider.model, "inputTokens": 0, "outputTokens": 0,
+             "tokenUsageKind": "local_no_provider", "estimatedCostUsd": "0"}
     if isinstance(provider, LocalExtractiveProvider):
         facts = []
         for item in evidence:
@@ -250,13 +315,13 @@ async def generate_artifact(
                 "The selected evidence has no usable study statements.",
             )
         artifact = {
-            "title": str(options.get("title", "Ã”n táº­p tá»« nguá»“n Ä‘Ã£ chá»n"))[:240]
+            "title": str(options.get("title", "Ôn tập từ nguồn đã chọn"))[:240]
         }
         if kind == "QUIZ":
             artifact["questions"] = [
                 {
                     "type": "SHORT_ANSWER",
-                    "prompt": "Äiá»n tá»« cÃ²n thiáº¿u: "
+                    "prompt": "Điền từ còn thiếu: "
                     + sentence[: word.start()]
                     + "_____"
                     + sentence[word.end() :],
@@ -272,7 +337,7 @@ async def generate_artifact(
         elif kind == "FLASHCARDS":
             artifact["cards"] = [
                 {
-                    "front": "Äiá»n tá»«: "
+                    "front": "Điền từ: "
                     + sentence[: word.start()]
                     + "_____"
                     + sentence[word.end() :],
@@ -282,7 +347,7 @@ async def generate_artifact(
                 for item, sentence, word in facts
             ]
         else:
-            artifact["content"] = "# Äoáº¡n Ã´n táº­p tá»« nguá»“n\n\n" + "\n\n".join(
+            artifact["content"] = "# Đoạn ôn tập từ nguồn\n\n" + "\n\n".join(
                 f"- {sentence} [{item.key}]" for item, sentence, _ in facts
             )
     else:
@@ -295,7 +360,7 @@ async def generate_artifact(
             {"key": e.key, "chunkId": e.chunk.id, "sourceId": e.chunk.source_id}
             for e in evidence
         ]
-        raw, _ = await provider.generate(
+        raw, usage = await provider.generate(
             [
                 {
                     "role": "system",
@@ -325,6 +390,7 @@ async def generate_artifact(
         )
     return {
         "artifact": validate_artifact(artifact, kind, evidence),
+        "usage": usage,
         "provenance": {
             "model": provider.model,
             "promptVersion": ARTIFACT_PROMPT_VERSION,

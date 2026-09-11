@@ -9,9 +9,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class PostgresAnalyticsQueries implements AnalyticsQueries {
     private final JdbcTemplate jdbc;
-    public PostgresAnalyticsQueries(JdbcTemplate jdbc){this.jdbc=jdbc;}
-    public Map<String,Object> overview(UUID user,UUID notebook){
-        return jdbc.queryForObject("""
+
+    public PostgresAnalyticsQueries(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
+
+    public Map<String, Object> overview(UUID user, UUID notebook) {
+        return jdbc.queryForObject(
+                """
                 WITH accessible AS (
                   SELECT n.id FROM notebooks n JOIN workspace_members m ON m.workspace_id=n.workspace_id
                   JOIN workspaces w ON w.id=n.workspace_id AND w.status='ACTIVE'
@@ -26,6 +31,17 @@ public class PostgresAnalyticsQueries implements AnalyticsQueries {
                   (SELECT coalesce(avg(m.mastery_score),0) FROM user_concept_mastery m JOIN concepts c ON c.id=m.concept_id WHERE m.user_id=? AND c.notebook_id IN(SELECT id FROM accessible)) AS average_mastery,
                   (SELECT count(*) FROM mastery_evidence e JOIN concepts c ON c.id=e.concept_id WHERE e.user_id=? AND c.notebook_id IN(SELECT id FROM accessible)) AS evidence_count,
                   (SELECT count(DISTINCT r.reviewed_at::date) FROM flashcard_reviews r JOIN flashcards f ON f.id=r.card_id JOIN flashcard_decks d ON d.id=f.deck_id WHERE r.user_id=? AND d.notebook_id IN(SELECT id FROM accessible) AND r.reviewed_at>=now()-interval '30 days') AS active_review_days_last30
-                """,Rows::map,user,notebook,notebook,user,user,user,user,user,user,user);
+                """,
+                Rows::map,
+                user,
+                notebook,
+                notebook,
+                user,
+                user,
+                user,
+                user,
+                user,
+                user,
+                user);
     }
 }

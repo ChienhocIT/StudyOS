@@ -1,3 +1,4 @@
+from itertools import pairwise
 from urllib.parse import parse_qs, urlsplit
 
 import httpx
@@ -101,7 +102,7 @@ async def fetch_transcript(
             or any(s.end_ms < s.start_ms for s in segments)
         ):
             raise ValueError("Invalid transcript bounds")
-        if any(a.start_ms > b.start_ms for a, b in zip(segments, segments[1:])):
+        if any(a.start_ms > b.start_ms for a, b in pairwise(segments)):
             raise ValueError("Transcript must be time ordered")
         return [
             Section(

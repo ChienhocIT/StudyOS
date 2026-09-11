@@ -154,7 +154,7 @@ class Consumer:
             except asyncio.CancelledError:
                 # Closing channel requeues unacknowledged work.
                 raise
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 -- Broker boundary classifies poison deliveries.
                 error = classify_error(exc)
                 try:
                     raw_attempt = (message.headers or {}).get("x-studyos-attempt", 0)
@@ -207,7 +207,7 @@ class Consumer:
                             }
                         )
                     )
-                except Exception:
+                except Exception:  # noqa: BLE001 -- Retain original delivery when handoff fails.
                     # The durable original remains available when handoff fails.
                     await message.nack(requeue=True)
                     await asyncio.sleep(1)
@@ -248,7 +248,7 @@ async def publish_outbox(pool, channel, stop: asyncio.Event):
                     pass
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception:  # noqa: BLE001 -- Unpublished durable rows survive publisher faults.
             LOGGER.warning(
                 '{"service":"studyos-worker","event":"outbox_publish_retry"}'
             )
