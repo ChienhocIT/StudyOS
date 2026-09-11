@@ -1,0 +1,56 @@
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+spring:
+  application:
+    name: studyos-core
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/studyos}
+    username: ${DATABASE_USERNAME:${POSTGRES_USER:studyos}}
+    password: ${DATABASE_PASSWORD:${POSTGRES_PASSWORD:studyos}}
+    hikari:
+      maximum-pool-size: 12
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: always
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:${RABBITMQ_USER:studyos}}
+    password: ${RABBITMQ_PASSWORD:studyos}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        default-requeue-rejected: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+studyos:
+  jwt-secret: ${JWT_SIGNING_KEY}
+  jwt-issuer: ${JWT_ISSUER:studyos-core}
+  internal-jwt-secret: ${INTERNAL_JWT_SECRET}
+  ai-url: ${AI_INTERNAL_URL:http://localhost:8000}
+  public-api-url: ${PUBLIC_API_URL:http://localhost:8080}
+  cors-origins: ${CORS_ALLOWED_ORIGINS:${CORS_ORIGINS:http://localhost:3000}}
+  messaging-enabled: ${MESSAGING_ENABLED:true}
+  storage:
+    endpoint: ${S3_ENDPOINT:http://localhost:9000}
+    public-endpoint: ${S3_PUBLIC_ENDPOINT:http://localhost:9000}
+    bucket: ${S3_BUCKET:studyos-sources}
+    region: ${S3_REGION:us-east-1}
+    access-key: ${S3_ACCESS_KEY}
+    secret-key: ${S3_SECRET_KEY}

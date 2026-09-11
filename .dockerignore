@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+**/node_modules
+**/.next
+**/target
+**/.venv
+**/__pycache__
+.tmp
+Software Desgin
+**/test-results

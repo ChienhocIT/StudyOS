@@ -1,0 +1,58 @@
+name: Quality gates
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: apps/core-api/pom.xml
+      - run: mvn -B -f apps/core-api/pom.xml verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-test-results
+          path: apps/core-api/target/surefire-reports
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.12'
+          enable-cache: true
+      - run: uv sync --project apps/ai-service --extra dev --locked
+      - run: uv sync --project apps/worker --extra dev --locked
+      - run: uv run --project apps/ai-service --extra dev pytest apps/ai-service/tests
+      - run: uv run --project apps/worker --extra dev pytest apps/worker/tests
+      - run: uv run --with pyyaml --with jsonschema python scripts/validate_contracts.py --require-internal
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+        working-directory: apps/web
+      - run: npm run typecheck && npm test && npm run build
+        working-directory: apps/web
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4

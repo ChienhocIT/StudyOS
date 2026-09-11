@@ -31,3 +31,4 @@ Thumbs.db
 data/
 playwright-report/
 test-results/
+*.tsbuildinfo
