@@ -1,0 +1,500 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "StudyOS Internal AI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "summary": "Live",
+        "operationId": "live_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "summary": "Ready",
+        "operationId": "ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Metrics",
+        "operationId": "metrics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/chat/stream": {
+      "post": {
+        "summary": "Chat",
+        "operationId": "chat_internal_v1_chat_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/retrieval/debug": {
+      "post": {
+        "summary": "Debug",
+        "operationId": "debug_internal_v1_retrieval_debug_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/artifacts/generate": {
+      "post": {
+        "summary": "Artifact",
+        "operationId": "artifact_internal_v1_artifacts_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/language/analyze": {
+      "post": {
+        "summary": "Language",
+        "operationId": "language_internal_v1_language_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LanguageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArtifactRequest": {
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/InternalContext"
+          },
+          "artifactType": {
+            "type": "string",
+            "enum": [
+              "QUIZ",
+              "FLASHCARDS",
+              "STUDY_GUIDE"
+            ],
+            "title": "Artifacttype"
+          },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "context",
+          "artifactType"
+        ],
+        "title": "ArtifactRequest"
+      },
+      "ChatRequest": {
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/InternalContext"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Requestid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Messageid"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 16000,
+            "minLength": 1,
+            "title": "Content"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "ASK",
+              "SOCRATIC",
+              "FEYNMAN",
+              "EXAM"
+            ],
+            "title": "Mode",
+            "default": "ASK"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryMessage"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "History"
+          },
+          "learnerState": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Learnerstate"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "context",
+          "requestId",
+          "messageId",
+          "content"
+        ],
+        "title": "ChatRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "USER",
+              "ASSISTANT"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 16000,
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "HistoryMessage"
+      },
+      "InternalContext": {
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspaceid"
+          },
+          "notebookId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Notebookid"
+          },
+          "sourceIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Sourceids"
+          },
+          "conversationId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversationid"
+          },
+          "traceId": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Traceid"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Permissions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "userId",
+          "workspaceId",
+          "notebookId",
+          "sourceIds",
+          "traceId",
+          "permissions"
+        ],
+        "title": "InternalContext"
+      },
+      "LanguageRequest": {
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/InternalContext"
+          },
+          "sentence": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Sentence"
+          },
+          "sourceLanguage": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Sourcelanguage",
+            "default": "en"
+          },
+          "targetLanguage": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Targetlanguage",
+            "default": "vi"
+          },
+          "learnerLevel": {
+            "type": "string",
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "title": "Learnerlevel",
+            "default": "B1"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "context",
+          "sentence"
+        ],
+        "title": "LanguageRequest"
+      },
+      "RetrievalRequest": {
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/InternalContext"
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Query"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "context",
+          "query"
+        ],
+        "title": "RetrievalRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

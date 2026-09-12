@@ -3,6 +3,8 @@ import { useState, type FormEvent } from "react";
 import { ArrowRight, BookOpen, Check, Layers3 } from "lucide-react";
 import { useAuth } from "./provider";
 import { ErrorNotice } from "@/shared/ui/primitives";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 export function AuthScreen() {
   const { authenticate } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -82,7 +84,7 @@ export function AuthScreen() {
             {mode === "register" && (
               <label>
                 Tên hiển thị
-                <input
+                <Input
                   name="displayName"
                   autoComplete="name"
                   required
@@ -93,7 +95,7 @@ export function AuthScreen() {
             )}
             <label>
               Email
-              <input
+              <Input
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -103,7 +105,7 @@ export function AuthScreen() {
             </label>
             <label>
               Mật khẩu
-              <input
+              <Input
                 name="password"
                 type="password"
                 autoComplete={
@@ -116,18 +118,19 @@ export function AuthScreen() {
               />
             </label>
             <ErrorNotice error={error} />
-            <button className="button primary full" disabled={pending}>
+            <Button className="button primary full" disabled={pending}>
               {pending
                 ? "Đang xử lý…"
                 : mode === "login"
                   ? "Đăng nhập"
                   : "Tạo tài khoản"}
               <ArrowRight size={17} />
-            </button>
+            </Button>
           </form>
           <p className="auth-switch">
             {mode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
-            <button
+            <Button
+              variant="link"
               className="text-button"
               onClick={() => {
                 setMode(mode === "login" ? "register" : "login");
@@ -135,7 +138,10 @@ export function AuthScreen() {
               }}
             >
               {mode === "login" ? "Tạo tài khoản" : "Đăng nhập"}
-            </button>
+            </Button>
+          </p>
+          <p className="auth-switch">
+            <a className="text-button" href="/landing">Khám phá StudyOS</a>
           </p>
         </div>
       </section>

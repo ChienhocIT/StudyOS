@@ -1,7 +1,9 @@
 "use client";
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { AlertCircle, BookOpen, LoaderCircle, X } from "lucide-react";
 import { ApiError } from "@/shared/api/client";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export function Loading({ label = "Đang tải…" }: { label?: string }) {
   return (
@@ -41,9 +43,9 @@ export function ErrorNotice({
           <small>Mã hỗ trợ: {error.traceId}</small>
         )}
         {retry && (
-          <button className="text-button" onClick={retry}>
+          <Button variant="link" className="text-button" onClick={retry}>
             Thử lại
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -75,31 +77,28 @@ export function Modal({
   children: ReactNode;
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    el?.showModal();
-    return () => {
-      el?.close();
-    };
-  }, []);
   return (
-    <dialog
-      ref={ref}
-      className="modal"
-      onCancel={onClose}
-      onClick={(event) => {
-        if (event.target === ref.current) onClose();
-      }}
-    >
-      <div className="modal-head">
-        <h2>{title}</h2>
-        <button className="icon-button" aria-label="Đóng" onClick={onClose}>
-          <X size={20} />
-        </button>
-      </div>
-      {children}
-    </dialog>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="modal"
+        showCloseButton={false}
+        aria-describedby={undefined}
+      >
+        <div className="modal-head">
+          <DialogTitle>{title}</DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="icon-button"
+            aria-label="Đóng"
+            onClick={onClose}
+          >
+            <X size={20} />
+          </Button>
+        </div>
+        {children}
+      </DialogContent>
+    </Dialog>
   );
 }
 export function Progress({ value, label }: { value: number; label: string }) {

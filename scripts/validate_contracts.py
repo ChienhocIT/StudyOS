@@ -6,6 +6,7 @@ import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
+CONTRACTS = ROOT / "Software Desgin" / "contracts"
 
 
 class UniqueKeysLoader(yaml.SafeLoader):
@@ -40,7 +41,7 @@ def check_refs(node, document):
 
 
 def main():
-    paths = [ROOT / "openapi-core.yaml", ROOT / "asyncapi-rabbitmq.yaml"]
+    paths = [CONTRACTS / "openapi-core.yaml", CONTRACTS / "asyncapi-rabbitmq.yaml"]
     internal = ROOT / "packages/contracts/openapi-ai-internal.yaml"
     if internal.exists():
         paths.append(internal)
@@ -55,12 +56,12 @@ def main():
                              for method in item if method.lower() in {"get", "post", "put", "patch", "delete", "options", "head"})
         print(f"PASS {path.name}: references, {endpoint_count} HTTP operations, {len(operations)} unique operation IDs")
     for name in ("event-envelope.schema.json", "websocket-protocol.schema.json"):
-        schema = json.loads((ROOT / name).read_text(encoding="utf-8"))
+        schema = json.loads((CONTRACTS / name).read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(schema)
         check_refs(schema, schema)
         print(f"PASS {name}: valid JSON schema")
-    examples = json.loads((ROOT / "websocket-examples.json").read_text(encoding="utf-8"))
-    schema = json.loads((ROOT / "websocket-protocol.schema.json").read_text(encoding="utf-8"))
+    examples = json.loads((CONTRACTS / "websocket-examples.json").read_text(encoding="utf-8"))
+    schema = json.loads((CONTRACTS / "websocket-protocol.schema.json").read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     values = examples if isinstance(examples, list) else examples.values()
     count = 0

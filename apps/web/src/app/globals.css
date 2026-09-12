@@ -1,3 +1,30 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--surface-strong);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface-strong);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface-strong);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--accent-strong);
+  --color-primary-foreground: #f7fffc;
+  --color-secondary: var(--surface-muted);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-muted);
+  --color-muted-foreground: var(--ink-soft);
+  --color-accent: var(--surface-accent);
+  --color-accent-foreground: var(--accent-strong);
+  --color-destructive: var(--danger);
+  --color-border: var(--line);
+  --color-input: var(--line-strong);
+  --color-ring: var(--accent);
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+}
+
 :root {
   color-scheme: light;
   --canvas: #f4f7f6;
@@ -2769,9 +2796,9 @@ progress::-moz-progress-bar {
   color: #82d7bb;
 }
 .auth-story-copy h1 {
-  max-width: 10ch;
+  max-width: none;
   margin: 17px 0 22px;
-  font-size: clamp(50px, 6.6vw, 94px);
+  font-size: clamp(46px, 4.4vw, 64px);
   font-weight: 650;
   line-height: 0.98;
   letter-spacing: -0.065em;
@@ -3153,26 +3180,27 @@ progress::-moz-progress-bar {
   }
   .auth-story {
     min-height: auto;
-    padding: 24px 20px 38px;
+    padding: 20px;
   }
   .auth-story-copy {
-    padding: 70px 0 55px;
+    margin: 0;
+    padding: 38px 0 10px;
   }
   .auth-story-copy h1 {
-    font-size: 50px;
+    margin: 12px 0 14px;
+    font-size: 40px;
   }
-  .study-loop {
-    align-items: flex-start;
-    flex-direction: column;
+  .auth-story-copy > p {
+    margin-bottom: 0;
+    font-size: 11px;
   }
-  .loop-line {
-    width: 1px;
-    height: 22px;
-    margin-left: 10px;
+  .study-loop,
+  .auth-story > small {
+    display: none;
   }
   .auth-form-area {
-    min-height: 620px;
-    padding: 48px 20px;
+    min-height: 560px;
+    padding: 40px 20px;
   }
 }
 
